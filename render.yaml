@@ -1,0 +1,46 @@
+# render.yaml — Render.com deployment configuration
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: mini-room-nail-booking
+    runtime: node
+    plan: free
+
+    # Build: install dependencies
+    buildCommand: npm install
+
+    # Start: uses the "start" script in package.json (node server.js)
+    startCommand: npm start
+
+    # Health check — Render pings this to confirm the app is up
+    healthCheckPath: /health
+
+    # Auto-deploy whenever you push to the main branch
+    autoDeploy: true
+
+    # Environment variables — set the VALUES in the Render dashboard
+    # Do NOT put real secrets here; list names only
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        generateValue: false   # Render injects PORT automatically
+      - key: SUPABASE_URL
+        sync: false            # Set in Render dashboard (e.g. https://xyz.supabase.co)
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false            # Set in Render dashboard (service_role secret key)
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false            # Set in Render dashboard
+      - key: ADMIN_USERNAME
+        sync: false            # Set in Render dashboard
+      - key: ADMIN_PASSWORD
+        sync: false            # Set in Render dashboard
+      - key: SALON_NAME
+        value: Mini Room Nail & Eyelash
+      - key: SALON_PHONE
+        sync: false            # Set in Render dashboard
+      - key: ADMIN_TELEGRAM_CHAT_ID
+        sync: false            # Set in Render dashboard (optional)
+      - key: SALON_TIMEZONE
+        value: Asia/Phnom_Penh

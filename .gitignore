@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Environment secrets — NEVER commit real .env
+.env
+.env.local
+.env.production
+.dev.vars
+.dev.vars.local
+
+# Keep the example template
+# .env.example  <-- this stays committed
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+
+# Scratch / dev-only test scripts
+scratch/
+
+# Editor/IDE folders
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Render artifacts
+.render/
+
+# Cloudflare Wrangler artifacts
+.wrangler/
+
+# Keys and certificates
+*.pem
+*.key
+*.cert
+

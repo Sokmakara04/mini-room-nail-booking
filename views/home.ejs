@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="<%= lang %>">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= salonName %> | <%= lang === 'km' ? 'សេវាកម្មកក់ក្រចកដៃ' : 'Fingernail Studio & Manicure' %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- Top Navigation -->
+  <nav class="salon-nav">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a class="salon-brand" href="/">
+        💅 <%= salonName %>
+      </a>
+
+      <div class="d-flex align-items-center gap-3">
+        <a class="nav-link d-none d-md-inline" href="/services"><%= lang === 'km' ? 'សេវាកម្មក្រចក' : 'Nail Services' %></a>
+        <a class="nav-link d-none d-md-inline" href="/status"><%= lang === 'km' ? 'ពិនិត្យការកក់' : 'Check Status' %></a>
+        
+        <!-- Language Switcher -->
+        <div class="lang-switch">
+          <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>">EN</a>
+          <a href="?lang=km" class="<%= lang === 'km' ? 'active' : '' %>">ខ្មែរ</a>
+        </div>
+
+        <a class="btn-nail btn-sm d-none d-sm-inline-flex" href="/book">
+          <%= lang === 'km' ? 'កក់ណាត់ជួប' : 'Book Appointment' %>
+        </a>
+        <a class="btn btn-outline-secondary btn-sm" href="/admin">Staff</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero-nail">
+    <div class="container py-4">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-7">
+          <div class="hero-eyebrow">
+            💅 <%= lang === 'km' ? 'សេវាកម្មថែរក្សាក្រចកដៃផ្តាច់មុខ' : 'Exclusive Fingernail Art & Care' %>
+          </div>
+          <h1 class="hero-title">
+            <% if (lang === 'km') { %>
+              សម្រស់និងភាពទាក់ទាញ<br><em>ចាប់ផ្តើមពីចុងម្រាមដៃ</em>
+            <% } else { %>
+              Elevate your style with<br><em>masterful nail artistry.</em>
+            <% } %>
+          </h1>
+          <p class="hero-lead">
+            <% if (lang === 'km') { %>
+              សូមស្វាគមន៍មកកាន់ស្ទូឌីយោក្រចកដៃទំនើប។ យើងខ្ញុំផ្ដល់ជូននូវការកាត់តម្រឹម សម្អាត លាបជែល និងគូរម៉ូដសិល្បៈក្រចកដៃយ៉ាងផ្ចិតផ្ចង់បំផុត។
+            <% } else { %>
+              Indulge in tailored fingernail treatments, precision manicures, chip-free gel coatings, and bespoke nail art crafted by certified artists.
+            <% } %>
+          </p>
+          <div class="d-flex flex-wrap gap-3">
+            <a class="btn-nail" href="/book">
+              📅 <%= lang === 'km' ? 'កក់ការណាត់ឥឡូវនេះ' : 'Book an Appointment' %>
+            </a>
+            <a class="btn-outline-nail" href="/services">
+              💅 <%= lang === 'km' ? 'មើលសេវាកម្មទាំងអស់' : 'Explore Nail Menu' %>
+            </a>
+          </div>
+
+          <div class="mt-4 pt-2 text-secondary small d-flex flex-wrap gap-4">
+            <div>⏰ <%= settings.openingTime %> - <%= settings.closingTime %> (<%= lang === 'km' ? 'រៀងរាល់ថ្ងៃ' : 'Mon - Sun' %>)</div>
+            <% if (settings.salonPhone) { %>
+              <div>📞 <a href="tel:<%= settings.salonPhone %>" class="text-decoration-none text-secondary"><%= settings.salonPhone %></a></div>
+            <% } %>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="glass-card text-center p-4">
+            <div class="mb-3">
+              <img src="https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=700&q=80" alt="Nail Art Studio" class="img-fluid rounded-4 shadow-sm" style="max-height: 280px; width: 100%; object-fit: cover;">
+            </div>
+            <h5 class="fw-bold mb-1"><%= lang === 'km' ? 'មានការកក់រួចហើយ?' : 'Already have a booking?' %></h5>
+            <p class="text-secondary small mb-3"><%= lang === 'km' ? 'បញ្ចូលលេខកូដ Reference ឬលេខទូរស័ព្ទដើម្បីពិនិត្យស្ថានភាព' : 'Check confirmation status via reference code or phone number.' %></p>
+            <form action="/status" method="get" class="d-flex gap-2">
+              <input type="text" name="query" class="form-control form-control-sm" placeholder="<%= lang === 'km' ? 'ឧទាហរណ៍៖ NL-XXXXXX ឬលេខទូរស័ព្ទ' : 'e.g. NL-XXXXXX or Phone' %>" required>
+              <button type="submit" class="btn btn-sm btn-dark"><%= lang === 'km' ? 'ស្វែងរក' : 'Lookup' %></button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Featured Fingernail Services -->
+  <section class="py-5">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+          <span class="text-uppercase fw-bold text-danger small" style="letter-spacing: 0.1em;"><%= lang === 'km' ? 'សេវាកម្មពេញនិយម' : 'FEATURED SERVICES' %></span>
+          <h2 class="fw-bold text-dark mt-1"><%= lang === 'km' ? 'សេវាកម្មថែទាំនិងរចនាក្រចកដៃ' : 'Fingernail Treatments' %></h2>
+        </div>
+        <a href="/services" class="btn btn-outline-dark btn-sm rounded-pill"><%= lang === 'km' ? 'មើលទាំងអស់ →' : 'View All →' %></a>
+      </div>
+
+      <div class="row g-4">
+        <% services.slice(0, 3).forEach(s => { %>
+          <div class="col-md-4">
+            <div class="service-card">
+              <div class="service-img-wrap">
+                <img src="<%= s.imageUrl || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=600&q=80' %>" alt="<%= s.name %>">
+                <span class="service-price-badge">$<%= s.price %></span>
+              </div>
+              <div class="service-body">
+                <h3 class="service-title"><%= lang === 'km' ? s.nameKm : s.name %></h3>
+                <div class="service-duration">
+                  ⏱️ <%= s.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>
+                </div>
+                <p class="service-desc"><%= lang === 'km' ? (s.descriptionKm || s.description) : (s.description || s.descriptionKm) %></p>
+                <a href="/book?serviceId=<%= s._id %>" class="btn-nail w-100 mt-auto">
+                  <%= lang === 'km' ? 'កក់សេវាកម្មនេះ' : 'Book This Service' %>
+                </a>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Choose Us -->
+  <section class="py-5" style="background: #f4eaec;">
+    <div class="container">
+      <div class="text-center max-w-700 mx-auto mb-5">
+        <h2 class="fw-bold"><%= lang === 'km' ? 'ហេតុអ្វីជ្រើសរើសស្ទូឌីយោក្រចកយើងខ្ញុំ?' : 'Why Choose Our Nail Studio?' %></h2>
+        <p class="text-secondary"><%= lang === 'km' ? 'យើងខ្ញុំយកចិត្តទុកដាក់ខ្ពស់លើអនាម័យ គុណភាពថ្នាំលាប និងភាពទាក់ទាញនៃក្រចកដៃរបស់អ្នក' : 'Dedicated strictly to pristine fingernail hygiene, top-tier gels, and individualized nail designs.' %></p>
+      </div>
+
+      <div class="row g-4 text-center">
+        <div class="col-md-4">
+          <div class="glass-card h-100 p-4">
+            <div class="fs-1 mb-2">✨</div>
+            <h5 class="fw-bold"><%= lang === 'km' ? 'អនាម័យនិងសុវត្ថិភាព 100%' : '100% Medical-Grade Sterilization' %></h5>
+            <p class="text-secondary small"><%= lang === 'km' ? 'ឧបករណ៍ទាំងអស់ត្រូវបានសម្លាប់មេរោគយ៉ាងម៉ត់ចត់មុននឹងបម្រើសេវាកម្មដល់អតិថិជនម្នាក់ៗ។' : 'All instruments undergo medical autoclave sterilization for uncompromising hygiene.' %></p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="glass-card h-100 p-4">
+            <div class="fs-1 mb-2">💎</div>
+            <h5 class="fw-bold"><%= lang === 'km' ? 'ថ្នាំជែលនិងសម្ភារៈនាំចូល' : 'Premium Non-Toxic Products' %></h5>
+            <p class="text-secondary small"><%= lang === 'km' ? 'ប្រើប្រាស់ថ្នាំលាបជែលកម្រិតខ្ពស់ មិនខូចក្រចក ជាប់បានយូរ និងគ្មានជាតិគីមីគ្រោះថ្នាក់។' : 'Gentle formulas free from toxic chemicals that preserve the strength of natural nail beds.' %></p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="glass-card h-100 p-4">
+            <div class="fs-1 mb-2">🎨</div>
+            <h5 class="fw-bold"><%= lang === 'km' ? 'អ្នកជំនាញម៉ូដក្រចកស្ទាត់ជំនាញ' : 'Custom Nail Art Masters' %></h5>
+            <p class="text-secondary small"><%= lang === 'km' ? 'ជាងក្រចកមានបទពិសោធន៍ខ្ពស់ ច្នៃម៉ូដបានគ្រប់ទម្រង់តាមក្តីស្រមៃរបស់បង។' : 'From French tips to intricate 3D chrome lines, we bring your dream inspiration to life.' %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Telegram Bot Integration Banner -->
+  <section class="py-5">
+    <div class="container">
+      <div class="glass-card p-4 p-md-5 d-flex flex-column flex-md-row align-items-center justify-content-between gap-4" style="background: linear-gradient(135deg, #ffffff 0%, #fef5f7 100%);">
+        <div>
+          <span class="badge bg-primary px-3 py-2 rounded-pill mb-2">Telegram Booking Bot</span>
+          <h3 class="fw-bold mb-2"><%= lang === 'km' ? 'កក់តាម Telegram យ៉ាងរហ័សទាន់ចិត្ត' : 'Book in Seconds with Telegram' %></h3>
+          <p class="text-secondary mb-0"><%= lang === 'km' ? 'ទទួលបានការជូនដំណឹងពីការបញ្ជាក់ការកក់ផ្ទាល់តាមទូរស័ព្ទរបស់អ្នក។' : 'Enjoy automated step-by-step booking and instant confirmation alerts directly in Telegram.' %></p>
+        </div>
+        <a href="https://t.me/salonstore_bot" target="_blank" class="btn-plum text-nowrap">
+          ✈️ <%= lang === 'km' ? 'បើក Telegram Bot (@salonstore_bot)' : 'Open @salonstore_bot' %>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container text-center">
+      <p class="mb-1"><strong><%= salonName %></strong> — <%= lang === 'km' ? 'ស្ទូឌីយោថែរក្សាក្រចកដៃកម្រិតខ្ពស់' : 'Premier Fingernail Studio & Manicure Art' %></p>
+      <p class="small text-secondary mb-0">© <%= new Date().getFullYear() %> <%= salonName %>. <%= lang === 'km' ? 'រក្សាសិទ្ធិគ្រប់យ៉ាង' : 'All rights reserved.' %></p>
+    </div>
+  </footer>
+</body>
+</html>

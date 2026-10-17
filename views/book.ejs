@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="<%= lang %>">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= salonName %> | <%= lang === 'km' ? 'កក់ការណាត់ជួបក្រចកដៃ' : 'Book a Fingernail Appointment' %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <nav class="salon-nav">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a class="salon-brand" href="/">
+        💅 <%= salonName %>
+      </a>
+
+      <div class="d-flex align-items-center gap-3">
+        <a class="nav-link" href="/"><%= lang === 'km' ? 'ទំព័រដើម' : 'Home' %></a>
+        <a class="nav-link" href="/services"><%= lang === 'km' ? 'សេវាកម្ម' : 'Services' %></a>
+        <a class="nav-link d-none d-md-inline" href="/status"><%= lang === 'km' ? 'ពិនិត្យការកក់' : 'Check Status' %></a>
+        
+        <div class="lang-switch">
+          <a href="?lang=en<%= selectedServiceId ? '&serviceId=' + selectedServiceId : '' %>" class="<%= lang === 'en' ? 'active' : '' %>">EN</a>
+          <a href="?lang=km<%= selectedServiceId ? '&serviceId=' + selectedServiceId : '' %>" class="<%= lang === 'km' ? 'active' : '' %>">ខ្មែរ</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-5">
+    <div class="max-w-700 mx-auto text-center mb-4">
+      <span class="hero-eyebrow">💅 <%= lang === 'km' ? 'កក់ណាត់ជួបតាមប្រព័ន្ធអនឡាញ' : 'ONLINE APPOINTMENT' %></span>
+      <h1 class="fw-bold mt-1"><%= lang === 'km' ? 'កក់សេវាកម្មក្រចកដៃ' : 'Book Your Fingernail Visit' %></h1>
+      <p class="text-secondary"><%= lang === 'km' ? 'សូមជ្រើសរើសសេវាកម្ម ថ្ងៃ និងម៉ោងដែលបងពេញចិត្ត។ ហាងនឹងបញ្ជាក់ការកក់ជូនក្នុងពេលឆាប់ៗ។' : 'Select your desired nail service, appointment date, and available time.' %></p>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="glass-card">
+          <form id="bookingForm" method="post" action="/book">
+            <input type="hidden" name="lang" value="<%= lang %>">
+            <input type="hidden" name="time" id="selectedTime" required>
+
+            <!-- Step 1: Service Selection -->
+            <div class="mb-4">
+              <label class="form-label fw-bold" for="serviceSelect">
+                1. <%= lang === 'km' ? 'ជ្រើសរើសសេវាកម្មក្រចកដៃ (Fingernail Service)' : 'Select Fingernail Service' %>
+              </label>
+              <select class="form-select form-select-lg" id="serviceSelect" name="serviceId" required>
+                <option value=""><%= lang === 'km' ? '-- សូមជ្រើសរើសសេវាកម្ម --' : '-- Choose a service --' %></option>
+                <% services.forEach(s => { %>
+                  <option value="<%= s._id %>" 
+                    data-price="<%= s.price %>" 
+                    data-duration="<%= s.durationMinutes %>"
+                    data-name="<%= lang === 'km' ? s.nameKm : s.name %>"
+                    <%= String(s._id) === String(selectedServiceId) ? 'selected' : '' %>>
+                    <%= lang === 'km' ? s.nameKm : s.name %> — $<%= s.price %> (<%= s.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>)
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+
+            <!-- Step 2: Date Selection -->
+            <div class="mb-4">
+              <label class="form-label fw-bold" for="appointmentDate">
+                2. <%= lang === 'km' ? 'ជ្រើសរើសថ្ងៃណាត់ជួប (Date)' : 'Select Date' %>
+              </label>
+              <input type="date" class="form-control form-control-lg" id="appointmentDate" name="date" required min="<%= today %>" value="<%= today %>">
+              <div class="form-text small text-muted">
+                <%= lang === 'km' ? 'ម៉ោងបើកហាង៖ ' + settings.openingTime + ' ដល់ ' + settings.closingTime : 'Salon opening hours: ' + settings.openingTime + ' to ' + settings.closingTime %>
+              </div>
+            </div>
+
+            <!-- Step 3: Available Time Slot Selection -->
+            <div class="mb-4">
+              <label class="form-label fw-bold d-flex justify-content-between align-items-center">
+                <span>3. <%= lang === 'km' ? 'ជ្រើសរើសម៉ោងទំនេរ (Available Time Slot)' : 'Select Available Time Slot' %></span>
+                <span id="slotStatus" class="small text-muted"></span>
+              </label>
+              
+              <div id="slotsContainer" class="p-3 bg-light rounded-3 text-center border">
+                <span class="text-secondary small"><%= lang === 'km' ? 'សូមជ្រើសរើសសេវាកម្ម និងថ្ងៃខាងលើដើម្បីបង្ហាញម៉ោងទំនេរ...' : 'Please choose a service and date above to load available slots...' %></span>
+              </div>
+              <div id="selectedSlotInfo" class="mt-2 text-success small fw-bold d-none"></div>
+            </div>
+
+            <!-- Step 4: Customer Contact Info -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-bold" for="customerName">
+                  4. <%= lang === 'km' ? 'ឈ្មោះពេញរបស់អ្នក (Full Name)' : 'Your Full Name' %>
+                </label>
+                <input type="text" class="form-control" id="customerName" name="customerName" maxlength="100" placeholder="<%= lang === 'km' ? 'ឧទាហរណ៍៖ សុខ សម្បត្តិ' : 'e.g. Jane Doe' %>" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-bold" for="customerPhone">
+                  5. <%= lang === 'km' ? 'លេខទូរស័ព្ទ (Phone Number)' : 'Phone Number' %>
+                </label>
+                <input type="tel" class="form-control" id="customerPhone" name="phone" maxlength="30" placeholder="<%= lang === 'km' ? 'ឧទាហរណ៍៖ 012 345 678' : 'e.g. 012 345 678' %>" required>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-bold small text-secondary" for="customerNotes">
+                  <%= lang === 'km' ? 'កំណត់ចំណាំបន្ថែម (ស្រេចចិត្ត)' : 'Special Requests or Notes (Optional)' %>
+                </label>
+                <textarea class="form-control" id="customerNotes" name="notes" rows="2" placeholder="<%= lang === 'km' ? 'ចំណង់ចំណូលចិត្តពណ៌ ម៉ូដក្រចក ឬសំណើពិសេស...' : 'Color preferences, specific nail art design ideas...' %>"></textarea>
+              </div>
+            </div>
+
+            <!-- Step 5: Live Summary Box -->
+            <div id="liveSummary" class="glass-card mb-4 p-3 bg-white border border-danger-subtle d-none">
+              <h6 class="fw-bold text-dark mb-2">📋 <%= lang === 'km' ? 'សេចក្តីសង្ខេបនៃការកក់' : 'Booking Summary' %></h6>
+              <div class="row small g-2">
+                <div class="col-6"><strong><%= lang === 'km' ? 'សេវាកម្ម៖' : 'Service:' %></strong> <span id="summaryService">-</span></div>
+                <div class="col-6"><strong><%= lang === 'km' ? 'តម្លៃ៖' : 'Price:' %></strong> <span id="summaryPrice" class="text-danger fw-bold">-</span></div>
+                <div class="col-6"><strong><%= lang === 'km' ? 'កាលបរិច្ឆេទ៖' : 'Date:' %></strong> <span id="summaryDate">-</span></div>
+                <div class="col-6"><strong><%= lang === 'km' ? 'ម៉ោង៖' : 'Time:' %></strong> <span id="summaryTime">-</span></div>
+              </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-nail btn-lg w-100 py-3" disabled>
+              📅 <%= lang === 'km' ? 'ស្នើសុំការកក់ក្រចកដៃ' : 'Submit Fingernail Booking' %>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container text-center">
+      <p class="mb-1"><strong><%= salonName %></strong></p>
+      <p class="small text-secondary mb-0">© <%= new Date().getFullYear() %> <%= salonName %>. <%= lang === 'km' ? 'រក្សាសិទ្ធិគ្រប់យ៉ាង' : 'All rights reserved.' %></p>
+    </div>
+  </footer>
+
+  <script>
+    const serviceSelect = document.getElementById('serviceSelect');
+    const dateInput = document.getElementById('appointmentDate');
+    const slotsContainer = document.getElementById('slotsContainer');
+    const selectedTimeInput = document.getElementById('selectedTime');
+    const slotStatus = document.getElementById('slotStatus');
+    const selectedSlotInfo = document.getElementById('selectedSlotInfo');
+    const liveSummary = document.getElementById('liveSummary');
+    const summaryService = document.getElementById('summaryService');
+    const summaryPrice = document.getElementById('summaryPrice');
+    const summaryDate = document.getElementById('summaryDate');
+    const summaryTime = document.getElementById('summaryTime');
+    const submitBtn = document.getElementById('submitBtn');
+
+    let currentSlots = [];
+    const isKm = '<%= lang %>' === 'km';
+
+    async function loadAvailableSlots() {
+      const serviceId = serviceSelect.value;
+      const date = dateInput.value;
+      selectedTimeInput.value = '';
+      selectedSlotInfo.classList.add('d-none');
+      updateSummary();
+
+      if (!serviceId || !date) {
+        slotsContainer.innerHTML = `<span class="text-secondary small">${isKm ? 'សូមជ្រើសរើសសេវាកម្ម និងថ្ងៃដើម្បីបង្ហាញម៉ោងទំនេរ' : 'Please select service and date to view available slots.'}</span>`;
+        return;
+      }
+
+      slotStatus.innerText = isKm ? 'កំពុងស្វែងរក...' : 'Checking availability...';
+      slotsContainer.innerHTML = `<div class="spinner-border spinner-border-sm text-danger" role="status"></div>`;
+
+      try {
+        const res = await fetch(`/api/available-slots?serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(date)}`);
+        const data = await res.json();
+        slotStatus.innerText = '';
+
+        if (!data.success) {
+          slotsContainer.innerHTML = `<div class="text-danger small py-2">${data.message || (isKm ? 'មិនអាចទាញយកម៉ោងបានទេ' : 'Could not load slots')}</div>`;
+          return;
+        }
+
+        currentSlots = data.slots || [];
+        if (currentSlots.length === 0) {
+          slotsContainer.innerHTML = `<div class="text-muted small py-2">${isKm ? '❌ គ្មានម៉ោងទំនេរនៅថ្ងៃនេះទេ (ហាងបិទ ឬពេញម៉ោង)' : '❌ No available slots for this date (salon closed or fully booked).'}</div>`;
+          return;
+        }
+
+        let html = '<div class="slot-grid">';
+        currentSlots.forEach(s => {
+          html += `<button type="button" class="slot-btn" data-time="${s.time}" data-endtime="${s.endTime}">${s.time}</button>`;
+        });
+        html += '</div>';
+        slotsContainer.innerHTML = html;
+
+        document.querySelectorAll('.slot-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedTimeInput.value = btn.dataset.time;
+            const end = btn.dataset.endtime;
+            selectedSlotInfo.innerText = `✓ ${isKm ? 'បានជ្រើសម៉ោង' : 'Selected'}: ${btn.dataset.time} - ${end}`;
+            selectedSlotInfo.classList.remove('d-none');
+            updateSummary();
+          });
+        });
+      } catch (err) {
+        slotStatus.innerText = '';
+        slotsContainer.innerHTML = `<div class="text-danger small">${isKm ? 'មានបញ្ហាបច្ចេកទេស' : 'Error loading slots.'}</div>`;
+      }
+    }
+
+    function updateSummary() {
+      const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+      const hasService = serviceSelect.value !== '';
+      const hasDate = dateInput.value !== '';
+      const hasTime = selectedTimeInput.value !== '';
+
+      if (hasService && hasDate && hasTime) {
+        liveSummary.classList.remove('d-none');
+        summaryService.innerText = selectedOption.dataset.name || '';
+        summaryPrice.innerText = '$' + (selectedOption.dataset.price || '0');
+        summaryDate.innerText = dateInput.value;
+        const matching = currentSlots.find(s => s.time === selectedTimeInput.value);
+        summaryTime.innerText = selectedTimeInput.value + (matching ? ` - ${matching.endTime}` : '');
+        submitBtn.disabled = false;
+      } else {
+        liveSummary.classList.add('d-none');
+        submitBtn.disabled = true;
+      }
+    }
+
+    serviceSelect.addEventListener('change', loadAvailableSlots);
+    dateInput.addEventListener('change', loadAvailableSlots);
+
+    // Initial load if service is pre-selected
+    if (serviceSelect.value) {
+      loadAvailableSlots();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "nail-salon-booking",
+  "version": "1.0.0",
+  "description": "Fingernail salon booking system with bilingual Telegram bot and Express admin",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node node_modules/nodemon/bin/nodemon.js --watch server.js --watch bot --watch views --watch models --watch utils --watch config --watch .env -e js,json,ejs,env server.js",
+    "migrate:supabase": "node scripts/migrate-mongo-to-supabase.js",
+    "test:suite": "node scratch/test_suite.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-basic-auth": "^1.2.1",
+    "mongoose": "^8.9.5",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
