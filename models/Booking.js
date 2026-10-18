@@ -108,9 +108,27 @@ class BookingQuery {
   async exec() {
     let query = supabase.from('bookings').select('*');
 
-    // Date filter
+    // Date filter (handles string equality, or $gte, $lte, $gt, $lt range objects)
     if (this.filter.date) {
-      query = query.eq('date', this.filter.date);
+      if (typeof this.filter.date === 'string') {
+        query = query.eq('date', this.filter.date);
+      } else if (typeof this.filter.date === 'object') {
+        if (this.filter.date.$gte) query = query.gte('date', this.filter.date.$gte);
+        if (this.filter.date.$gt) query = query.gt('date', this.filter.date.$gt);
+        if (this.filter.date.$lte) query = query.lte('date', this.filter.date.$lte);
+        if (this.filter.date.$lt) query = query.lt('date', this.filter.date.$lt);
+        if (this.filter.date.$eq) query = query.eq('date', this.filter.date.$eq);
+      }
+    }
+
+    // CreatedAt filter (for retention query and recently created check)
+    if (this.filter.createdAt) {
+      if (typeof this.filter.createdAt === 'object') {
+        if (this.filter.createdAt.$gte) query = query.gte('created_at', this.filter.createdAt.$gte);
+        if (this.filter.createdAt.$gt) query = query.gt('created_at', this.filter.createdAt.$gt);
+        if (this.filter.createdAt.$lte) query = query.lte('created_at', this.filter.createdAt.$lte);
+        if (this.filter.createdAt.$lt) query = query.lt('created_at', this.filter.createdAt.$lt);
+      }
     }
 
     // Status filter
@@ -272,7 +290,14 @@ const Booking = {
     let query = supabase.from('bookings').select('*', { count: 'exact', head: true });
 
     if (filter.date) {
-      query = query.eq('date', filter.date);
+      if (typeof filter.date === 'string') {
+        query = query.eq('date', filter.date);
+      } else if (typeof filter.date === 'object') {
+        if (filter.date.$gte) query = query.gte('date', filter.date.$gte);
+        if (filter.date.$gt) query = query.gt('date', filter.date.$gt);
+        if (filter.date.$lte) query = query.lte('date', filter.date.$lte);
+        if (filter.date.$lt) query = query.lt('date', filter.date.$lt);
+      }
     }
     if (filter.status) {
       query = query.eq('status', filter.status);
@@ -284,6 +309,32 @@ const Booking = {
       return 0;
     }
     return count || 0;
+  },
+
+  async findByIdAndDelete(id) {
+    if (!id) return null;
+    const cleanId = String(id).trim();
+
+    // Validate UUID format to prevent parameter manipulation or SQL injection
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(cleanId)) {
+      return null;
+    }
+
+    const existing = await this.findById(cleanId);
+    if (!existing) return null;
+
+    const { error } = await supabase
+      .from('bookings')
+      .delete()
+      .eq('id', cleanId);
+
+    if (error) {
+      console.error('[Supabase Error] Booking.findByIdAndDelete failed:', error.message);
+      throw new Error(`Failed to delete booking: ${error.message}`);
+    }
+
+    return existing;
   },
 
   async deleteMany(filter = {}) {

@@ -6,7 +6,7 @@ function toCamelSettings(row) {
     id: String(row.id),
     _id: String(row.id),
     salonName: row.salon_name || 'Mini Room Nail & Eyelash',
-    salonPhone: row.salon_phone || '012345678',
+    salonPhone: row.salon_phone || '+855 77 681 075',
     openingTime: row.opening_time || '09:00',
     closingTime: row.closing_time || '19:00',
     slotIntervalMinutes: Number(row.slot_interval_minutes || 30),
@@ -67,7 +67,7 @@ const SalonSetting = {
     // Default settings fallback & creation
     const defaultSettings = {
       salon_name: process.env.SALON_NAME || 'Mini Room Nail & Eyelash',
-      salon_phone: process.env.SALON_PHONE || '012345678',
+      salon_phone: process.env.SALON_PHONE || '+855 77 681 075',
       opening_time: '09:00',
       closing_time: '19:00',
       slot_interval_minutes: 30,

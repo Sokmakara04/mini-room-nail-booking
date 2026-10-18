@@ -18,6 +18,8 @@ const {
   getAvailableSlots,
   checkSlotAvailability
 } = require('./utils/scheduler');
+const { previewExpiredBookings, executeExpiredBookingsCleanup } = require('./utils/retention');
+const { supabase } = require('./config/supabase');
 const { messages } = require('./bot/messages');
 
 const app = express();
@@ -84,6 +86,16 @@ async function sendTelegramMessage(chatId, text, options = {}) {
       if (result.parameters?.migrate_to_chat_id) {
         const migratedId = result.parameters.migrate_to_chat_id;
         payload.chat_id = migratedId;
+        const retryRes = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        return await retryRes.json();
+      }
+      if (payload.parse_mode && (result.description || '').toLowerCase().includes('parse')) {
+        console.warn(`[Telegram Fallback] Retrying sendTelegramMessage as plain text due to parse error: ${result.description}`);
+        delete payload.parse_mode;
         const retryRes = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -420,23 +432,69 @@ app.get('/admin', adminAuth, async (req, res) => {
     const filterDate = req.query.filterDate || '';
     const filterStatus = req.query.filterStatus || '';
     const search = req.query.search ? req.query.search.trim() : '';
+    const viewMode = req.query.view || (filterDate || search ? 'custom' : '7days');
+
+    const today = getLocalToday(DEFAULT_TIMEZONE);
+    // Calculate 7-day rolling window end boundary (today + 7 days) in Asia/Phnom_Penh
+    const [y, m, d] = today.split('-').map(Number);
+    const dateObj = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    dateObj.setUTCDate(dateObj.getUTCDate() + 7);
+    const end7Days = dateObj.toISOString().slice(0, 10);
 
     // Build filter query
     const filter = {};
-    if (filterDate) filter.date = filterDate;
-    if (filterStatus) filter.status = filterStatus;
+    let dateRangeLabel = '';
+
     if (search) {
       filter.$or = [
         { bookingReference: { $regex: new RegExp(search, 'i') } },
         { customerName: { $regex: new RegExp(search, 'i') } },
         { phone: { $regex: new RegExp(search, 'i') } }
       ];
+      dateRangeLabel = `Search: "${search}" (All dates)`;
+    } else if (filterDate) {
+      filter.date = filterDate;
+      dateRangeLabel = `Specific Date: ${filterDate}`;
+    } else if (viewMode === 'today') {
+      filter.date = today;
+      dateRangeLabel = `Today: ${today}`;
+    } else if (viewMode === 'upcoming') {
+      filter.date = { $gte: today };
+      dateRangeLabel = `Upcoming Appointments (${today} onwards)`;
+    } else if (viewMode === 'all') {
+      dateRangeLabel = `All Booking History`;
+    } else {
+      // Default: Rolling 7-day window (today through today + 7 days)
+      filter.date = { $gte: today, $lte: end7Days };
+      dateRangeLabel = `Rolling 7-Day Window (${today} to ${end7Days})`;
     }
 
-    const bookings = await Booking.find(filter).sort({ date: 1, time: 1, createdAt: -1 }).lean();
+    if (filterStatus) {
+      filter.status = filterStatus;
+    }
+
+    let bookings = await Booking.find(filter).sort({ date: 1, time: 1, createdAt: -1 }).lean();
+
+    // In default 7-day view, also include pending bookings scheduled beyond 7 days so new reservations are not missed
+    if (viewMode === '7days' && !search && !filterDate) {
+      const pendingBeyond = await Booking.find({
+        date: { $gt: end7Days },
+        status: 'pending'
+      }).sort({ date: 1, time: 1 }).lean();
+
+      if (pendingBeyond.length > 0) {
+        const existingIds = new Set(bookings.map(b => b.id));
+        for (const pb of pendingBeyond) {
+          if (!existingIds.has(pb.id)) {
+            bookings.push(pb);
+          }
+        }
+        bookings.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+      }
+    }
+
     const services = await Service.find({ category: 'fingernail' }).sort({ price: 1 }).lean();
     const settings = await SalonSetting.getSettings();
-    const today = getLocalToday();
 
     // Statistics
     const todayCount = await Booking.countDocuments({ date: today });
@@ -450,10 +508,14 @@ app.get('/admin', adminAuth, async (req, res) => {
       services,
       settings,
       today,
+      end7Days,
       activeTab,
       alertMessage,
       alertType,
-      filters: { filterDate, filterStatus, search },
+      viewMode,
+      dateRangeLabel,
+      timeZone: DEFAULT_TIMEZONE,
+      filters: { filterDate, filterStatus, search, view: viewMode },
       stats: { todayCount, pendingCount, confirmedCount, totalCount }
     });
   } catch (err) {
@@ -540,6 +602,49 @@ app.post('/admin/bookings/:id/reschedule', adminAuth, async (req, res) => {
   } catch (err) {
     console.error('Reschedule error:', err);
     res.redirect('/admin?tab=bookings&type=danger&msg=' + encodeURIComponent('Error rescheduling booking.'));
+  }
+});
+
+// Delete Booking (Admin Only, Protected by adminAuth)
+app.post('/admin/bookings/:id/delete', adminAuth, async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    if (!bookingId) {
+      return res.redirect('/admin?tab=bookings&type=danger&msg=' + encodeURIComponent('Missing booking ID.'));
+    }
+
+    const cleanId = String(bookingId).trim();
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(cleanId)) {
+      return res.redirect('/admin?tab=bookings&type=danger&msg=' + encodeURIComponent('Invalid booking ID format.'));
+    }
+
+    const deleted = await Booking.findByIdAndDelete(cleanId);
+    if (!deleted) {
+      return res.redirect('/admin?tab=bookings&type=warning&msg=' + encodeURIComponent('Booking record not found or already deleted.'));
+    }
+
+    console.log(`[Admin Audit] Booking #${deleted.bookingReference} (ID: ${deleted.id}) deleted by administrator.`);
+
+    res.redirect(
+      '/admin?tab=bookings&type=success&msg=' +
+      encodeURIComponent(`Booking #${deleted.bookingReference} for ${deleted.customerName} has been deleted successfully.`)
+    );
+  } catch (err) {
+    console.error('Delete booking error:', err);
+    res.redirect('/admin?tab=bookings&type=danger&msg=' + encodeURIComponent('Failed to delete booking. Please try again.'));
+  }
+});
+
+// Dry-run preview of 3-month retention cleanup (Admin Only)
+app.get('/admin/retention/dry-run', adminAuth, async (req, res) => {
+  try {
+    const days = Number(req.query.days || 90);
+    const preview = await previewExpiredBookings(supabase, { retentionDays: days, timeZone: DEFAULT_TIMEZONE });
+    res.json(preview);
+  } catch (err) {
+    console.error('Retention dry-run preview error:', err);
+    res.status(500).json({ error: 'Failed to run retention preview', message: err.message });
   }
 });
 
@@ -806,4 +911,8 @@ async function startServer() {
   }
 }
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = app;
