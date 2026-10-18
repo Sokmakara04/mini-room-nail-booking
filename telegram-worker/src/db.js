@@ -114,6 +114,9 @@ export async function getServiceById(supabase, id) {
 
 export async function createBooking(supabase, bookingData) {
   const ref = bookingData.bookingReference || generateBookingReference();
+  const rawLang = String(bookingData.language || '').toLowerCase().trim();
+  const safeLang = (rawLang === 'km' || rawLang === 'khmer') ? 'km' : 'en';
+
   const payload = {
     booking_reference: ref,
     customer_name: (bookingData.customerName || '').trim(),
@@ -129,9 +132,9 @@ export async function createBooking(supabase, bookingData) {
     notes: (bookingData.notes || '').trim(),
     admin_notes: (bookingData.adminNotes || '').trim(),
     telegram_id: String(bookingData.telegramId || '').trim(),
-    source: bookingData.source || 'telegram',
-    language: bookingData.language || 'en',
-    status: bookingData.status || 'pending'
+    source: bookingData.source === 'website' ? 'website' : 'telegram',
+    language: safeLang,
+    status: ['pending', 'confirmed', 'rejected', 'cancelled', 'completed'].includes(bookingData.status) ? bookingData.status : 'pending'
   };
 
   const { data, error } = await supabase

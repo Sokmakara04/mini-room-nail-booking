@@ -67,7 +67,12 @@ async function callTelegramApi(token, method, payload) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    return await res.json();
+    const result = await res.json();
+    if (!result.ok) {
+      // Safe error logging: logs error code and Telegram description without revealing token or secrets
+      console.warn(`[Telegram API] ${method} returned error code ${result.error_code}: ${result.description}`);
+    }
+    return result;
   } catch (err) {
     console.error(`[Telegram API Network Error] ${method}:`, err.message);
     return { ok: false, error: err.message };
@@ -78,13 +83,35 @@ async function sendMessage(token, chatId, text, options = {}) {
   const payload = {
     chat_id: chatId,
     text: text,
-    parse_mode: options.parse_mode || 'Markdown',
     disable_web_page_preview: options.disable_web_page_preview ?? true
   };
+  if (options.parse_mode) {
+    payload.parse_mode = options.parse_mode;
+  } else if (options.parse_mode === undefined) {
+    payload.parse_mode = 'Markdown';
+  }
   if (options.reply_markup) {
     payload.reply_markup = options.reply_markup;
   }
-  return await callTelegramApi(token, 'sendMessage', payload);
+
+  let result = await callTelegramApi(token, 'sendMessage', payload);
+
+  // If group was upgraded to supergroup, automatically retry with migrated chat ID
+  if (!result.ok && result.parameters?.migrate_to_chat_id) {
+    const newChatId = result.parameters.migrate_to_chat_id;
+    console.log(`[Telegram Migration] Retrying sendMessage with upgraded supergroup ID: ${newChatId}`);
+    payload.chat_id = newChatId;
+    result = await callTelegramApi(token, 'sendMessage', payload);
+  }
+
+  // If Markdown parse failed (400 Bad Request: can't parse entities), retry as safe plain text
+  if (!result.ok && payload.parse_mode && (result.description || '').toLowerCase().includes('parse')) {
+    console.warn(`[Telegram Fallback] Retrying sendMessage as plain text due to parse error: ${result.description}`);
+    delete payload.parse_mode;
+    result = await callTelegramApi(token, 'sendMessage', payload);
+  }
+
+  return result;
 }
 
 async function editMessageText(token, chatId, messageId, text, options = {}) {
@@ -92,13 +119,26 @@ async function editMessageText(token, chatId, messageId, text, options = {}) {
     chat_id: chatId,
     message_id: messageId,
     text: text,
-    parse_mode: options.parse_mode || 'Markdown',
     disable_web_page_preview: options.disable_web_page_preview ?? true
   };
+  if (options.parse_mode) {
+    payload.parse_mode = options.parse_mode;
+  } else if (options.parse_mode === undefined) {
+    payload.parse_mode = 'Markdown';
+  }
   if (options.reply_markup) {
     payload.reply_markup = options.reply_markup;
   }
-  return await callTelegramApi(token, 'editMessageText', payload);
+
+  let result = await callTelegramApi(token, 'editMessageText', payload);
+
+  // If Markdown parse failed, retry as safe plain text
+  if (!result.ok && payload.parse_mode && (result.description || '').toLowerCase().includes('parse')) {
+    delete payload.parse_mode;
+    result = await callTelegramApi(token, 'editMessageText', payload);
+  }
+
+  return result;
 }
 
 async function answerCallbackQuery(token, callbackQueryId, text = '', showAlert = false) {
@@ -111,7 +151,10 @@ async function answerCallbackQuery(token, callbackQueryId, text = '', showAlert 
 
 // Notify salon administrator of a new booking
 async function alertAdminNewBooking(token, adminChatId, booking) {
-  if (!token || !adminChatId) return;
+  if (!token || !adminChatId) {
+    console.warn('[Admin Alert Skipped] Missing TELEGRAM_BOT_TOKEN or ADMIN_TELEGRAM_CHAT_ID.');
+    return { ok: false, reason: 'unconfigured' };
+  }
 
   const lang = booking.language === 'km' ? 'km' : 'en';
   const t = messages[lang] || messages.en;
@@ -126,10 +169,15 @@ async function alertAdminNewBooking(token, adminChatId, booking) {
     ]
   };
 
-  await sendMessage(token, adminChatId, adminMsg, {
+  const res = await sendMessage(token, adminChatId, adminMsg, {
     parse_mode: 'Markdown',
     reply_markup: inlineKeyboard
   });
+
+  if (!res.ok) {
+    console.error(`[Admin Alert Failed] target_chat=${adminChatId}: ${res.description || res.error || 'Unknown error'}`);
+  }
+  return res;
 }
 
 // ==============================================================================
@@ -483,7 +531,8 @@ async function handleUpdate(update, env) {
 
     // 1.7 Final Booking Confirmation
     if (data.startsWith('cf:')) {
-      const [, decision, lang] = data.split(':');
+      const [, decision, rawLang] = data.split(':');
+      const lang = (rawLang === 'km') ? 'km' : 'en';
       const t = messages[lang] || messages.en;
 
       if (decision === 'cancel') {
@@ -607,9 +656,12 @@ async function handleUpdate(update, env) {
       await answerCallbackQuery(token, queryId, `Booking #${updated.bookingReference} ${targetStatus}!`);
 
       const statusBadge = targetStatus === 'confirmed' ? '✅ CONFIRMED' : '❌ REJECTED';
-      const updatedAdminText = `${query.message?.text || ''}\n\n━━━━━━━━━━━━━━━━━━━━\n${statusBadge} by Administrator.`;
+      const originalText = query.message?.text || '';
+      const updatedAdminText = `${originalText}\n\n━━━━━━━━━━━━━━━━━━━━\n${statusBadge} by Administrator.`;
 
+      // Use safe parse_mode: null to prevent markdown errors on plain message text
       await editMessageText(token, chatId, messageId, updatedAdminText, {
+        parse_mode: null,
         reply_markup: { inline_keyboard: [] } // Remove action buttons to prevent double-click
       });
       return;
@@ -622,12 +674,39 @@ async function handleUpdate(update, env) {
   if (update.message) {
     const msg = update.message;
     const chatId = String(msg.chat.id);
+    const chatType = msg.chat?.type || 'private'; // 'private', 'group', 'supergroup', 'channel'
+    const isGroup = (chatType === 'group' || chatType === 'supergroup');
     const text = (msg.text || '').trim();
     const contact = msg.contact;
     const fromUser = msg.from || {};
 
+    // Handle group migration to supergroup event
+    if (msg.migrate_to_chat_id) {
+      console.log(`[Telegram Migration] Group ${chatId} was migrated to supergroup ${msg.migrate_to_chat_id}`);
+      return;
+    }
+
+    // Normalize command and argument (supports /cmd and /cmd@botname)
+    let command = null;
+    let commandArg = '';
+    if (text.startsWith('/')) {
+      const match = text.match(/^\/([a-zA-Z0-9_]+)(?:@([a-zA-Z0-9_]+))?(?:\s+(.*))?$/s);
+      if (match) {
+        command = match[1].toLowerCase();
+        commandArg = (match[3] || '').trim();
+      }
+    }
+
     // 2.1 Handle /start Command
-    if (text.startsWith('/start')) {
+    if (command === 'start') {
+      if (isGroup) {
+        await sendMessage(token, chatId, `💅 **${salonName} Bot** is active in this group.\n\nNew booking notifications will appear here with confirmation buttons.\nTo make an appointment privately, please click below:`, {
+          reply_markup: {
+            inline_keyboard: [[{ text: '💬 Open Bot Private Chat', url: `https://t.me/salonstore_bot` }]]
+          }
+        });
+        return;
+      }
       sessions.delete(chatId);
       await sendMessage(token, chatId, messages.en.languagePrompt, {
         reply_markup: getLanguageSelectionKeyboard()
@@ -636,7 +715,11 @@ async function handleUpdate(update, env) {
     }
 
     // 2.2 Handle /language Command
-    if (text.startsWith('/language')) {
+    if (command === 'language') {
+      if (isGroup) {
+        await sendMessage(token, chatId, 'ℹ️ The language menu is designed for customer appointment booking in direct chat.');
+        return;
+      }
       await sendMessage(token, chatId, messages.en.languagePrompt, {
         reply_markup: getLanguageSelectionKeyboard()
       });
@@ -644,7 +727,8 @@ async function handleUpdate(update, env) {
     }
 
     // 2.3 Handle /cancel Command
-    if (text.startsWith('/cancel')) {
+    if (command === 'cancel') {
+      if (isGroup) return;
       sessions.delete(chatId);
       await sendMessage(token, chatId, messages.en.cancelled, {
         reply_markup: getMainMenuKeyboard('en')
@@ -652,15 +736,34 @@ async function handleUpdate(update, env) {
       return;
     }
 
-    // 2.4 Handle /myid Command
-    if (text.startsWith('/myid')) {
-      const idInfo = `👤 **Your Telegram Profile:**\n\n• **Chat ID:** \`${chatId}\`\n• **Username:** @${fromUser.username || 'None'}\n• **Name:** ${fromUser.first_name || ''} ${fromUser.last_name || ''}`.trim();
+    // 2.4 Handle /myid, /chatid, /groupid Command
+    if (command === 'myid' || command === 'chatid' || command === 'groupid') {
+      let idInfo;
+      if (isGroup) {
+        idInfo = `👥 **Telegram Group Details:**\n\n` +
+          `• **Group Title:** ${msg.chat.title || 'Admin Group'}\n` +
+          `• **Chat ID:** \`${chatId}\`\n` +
+          `• **Chat Type:** \`${chatType}\`\n` +
+          `• **Sender:** ${fromUser.first_name || ''} (@${fromUser.username || 'None'})\n\n` +
+          `💡 *Copy this Chat ID to configure ADMIN_TELEGRAM_CHAT_ID in Cloudflare Workers or .env.*`;
+      } else {
+        idInfo = `👤 **Your Telegram Profile:**\n\n• **Chat ID:** \`${chatId}\`\n• **Username:** @${fromUser.username || 'None'}\n• **Name:** ${fromUser.first_name || ''} ${fromUser.last_name || ''}`.trim();
+      }
       await sendMessage(token, chatId, idInfo);
       return;
     }
 
     // 2.5 Handle /help Command
-    if (text.startsWith('/help')) {
+    if (command === 'help') {
+      if (isGroup) {
+        const groupHelp = `👥 **Admin Group Commands:**\n\n` +
+          `• \`/myid\` or \`/chatid\` - View this group's Chat ID for configuration\n` +
+          `• \`/status <REF>\` - Look up an appointment by reference (e.g. \`/status NL-123456\`)\n` +
+          `• \`/services\` - View active fingernail services and pricing\n\n` +
+          `ℹ️ *New appointment alerts with Confirm / Reject buttons appear automatically in this group.*`;
+        await sendMessage(token, chatId, groupHelp);
+        return;
+      }
       await sendMessage(token, chatId, messages.en.help, {
         reply_markup: getMainMenuKeyboard('en')
       });
@@ -668,24 +771,26 @@ async function handleUpdate(update, env) {
     }
 
     // 2.6 Handle /services Command
-    if (text.startsWith('/services')) {
+    if (command === 'services') {
       const services = await getActiveServices(supabase);
       let catalog = messages.en.servicesHeader;
       for (const s of services) {
         catalog += `✨ **${s.name}**\n💵 $${s.price}  |  ⏱️ ${s.durationMinutes} mins\n_${s.description || ''}_\n\n`;
       }
-      await sendMessage(token, chatId, catalog, {
-        reply_markup: {
-          inline_keyboard: [[{ text: '📅 Book Now', callback_data: 'menu:book:en' }]]
-        }
-      });
+      const replyMarkup = isGroup
+        ? undefined
+        : { inline_keyboard: [[{ text: '📅 Book Now', callback_data: 'menu:book:en' }]] };
+      await sendMessage(token, chatId, catalog, { reply_markup: replyMarkup });
       return;
     }
 
     // 2.7 Handle /status Command
-    if (text.startsWith('/status')) {
-      const queryParam = text.replace('/status', '').trim();
-      const searchTarget = queryParam || chatId;
+    if (command === 'status') {
+      const searchTarget = commandArg || (isGroup ? '' : chatId);
+      if (!searchTarget) {
+        await sendMessage(token, chatId, 'ℹ️ Please specify a booking reference to check, e.g.:\n`/status NL-123456`');
+        return;
+      }
       const results = await findBookingsByQuery(supabase, searchTarget);
 
       if (results.length === 0) {
@@ -702,7 +807,11 @@ async function handleUpdate(update, env) {
     }
 
     // 2.8 Handle /book Command
-    if (text.startsWith('/book')) {
+    if (command === 'book') {
+      if (isGroup) {
+        await sendMessage(token, chatId, `ℹ️ Customer appointment booking is conducted privately to protect contact details. Please message the bot directly.`);
+        return;
+      }
       const services = await getActiveServices(supabase);
       const buttons = services.map(s => ([{
         text: `💅 ${s.name} ($${s.price} • ${s.durationMinutes}m)`,
@@ -714,7 +823,12 @@ async function handleUpdate(update, env) {
       return;
     }
 
-    // 2.9 Handle Contact or Phone Input while in active booking session
+    // In group chats, ignore non-command regular messages to avoid spamming the group
+    if (isGroup) {
+      return;
+    }
+
+    // 2.9 Handle Contact or Phone Input while in active booking session (Private chat only)
     const currentSession = sessions.get(chatId);
     let candidatePhone = contact?.phone_number || '';
     if (!candidatePhone && /^[0-9+ -]{8,20}$/.test(text)) {
@@ -740,7 +854,7 @@ async function handleUpdate(update, env) {
       return;
     }
 
-    // 2.10 Default Fallback
+    // 2.10 Default Fallback (Private chat only)
     await sendMessage(token, chatId, `💅 **${salonName}**\nPlease choose an option from the menu:`, {
       reply_markup: getMainMenuKeyboard('en')
     });
@@ -840,5 +954,64 @@ export default {
     }
 
     return new Response('Method Not Allowed', { status: 405 });
+  },
+
+  /**
+   * Cloudflare Worker Scheduled Cron Handler
+   * Runs automated 3-month retention cleanup if ENABLE_AUTO_CLEANUP === 'true'
+   * @param {object} event - Cron trigger event
+   * @param {object} env - Worker environment bindings
+   * @param {object} ctx - Execution context
+   */
+  async scheduled(event, env, ctx) {
+    if (env.ENABLE_AUTO_CLEANUP !== 'true') {
+      console.log('[Retention Cron] ENABLE_AUTO_CLEANUP is not "true". Automatic cleanup is skipped.');
+      return;
+    }
+
+    try {
+      const supabase = getSupabase(env);
+      const retentionDays = Number(env.RETENTION_DAYS || 90);
+      const timeZone = env.SALON_TIMEZONE || DEFAULT_TIMEZONE;
+
+      const todayStr = getLocalToday(timeZone);
+      const [y, m, d] = todayStr.split('-').map(Number);
+      const base = new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
+      base.setUTCDate(base.getUTCDate() - retentionDays);
+      const cutoffDate = base.toISOString().slice(0, 10);
+      const cutoffTimestamp = base.toISOString();
+
+      // Query eligible records: appointment date < cutoffDate AND created_at < cutoffTimestamp AND date < todayStr
+      const { data: eligible, error: selectErr } = await supabase
+        .from('bookings')
+        .select('id')
+        .lt('date', cutoffDate)
+        .lt('created_at', cutoffTimestamp)
+        .lt('date', todayStr);
+
+      if (selectErr) {
+        console.error('[Retention Cron Error] Selection query failed:', selectErr.message);
+        return;
+      }
+
+      if (!eligible || eligible.length === 0) {
+        console.log(`[Retention Cron] 0 expired bookings older than ${cutoffDate}. Cleanup completed with no records deleted.`);
+        return;
+      }
+
+      const ids = eligible.map(r => r.id);
+      const { error: delErr } = await supabase
+        .from('bookings')
+        .delete()
+        .in('id', ids);
+
+      if (delErr) {
+        console.error('[Retention Cron Error] Deletion failed:', delErr.message);
+      } else {
+        console.log(`[Retention Cron] Successfully cleaned up ${ids.length} expired booking records older than ${cutoffDate}.`);
+      }
+    } catch (err) {
+      console.error('[Retention Cron Exception]:', err.message);
+    }
   }
 };

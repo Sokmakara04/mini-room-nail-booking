@@ -12,6 +12,13 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 SALON_NAME = "Mini Room Nail & Eyelash"
 SALON_TIMEZONE = "Asia/Phnom_Penh"
+ENABLE_AUTO_CLEANUP = "false"
+RETENTION_DAYS = "90"
+
+# Optional Cloudflare Cron Trigger (Runs retention cleanup daily at 03:00 AM Asia/Phnom_Penh / 20:00 UTC)
+# Uncomment to enable scheduled worker execution:
+# [triggers]
+# crons = ["0 20 * * *"]
 
 # ==============================================================================
 # SECRETS (Do NOT store real secrets in this file!)
