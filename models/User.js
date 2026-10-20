@@ -61,6 +61,28 @@ const User = {
     };
   },
 
+  async updatePassword(email, newPassword) {
+    if (!email || !newPassword) throw new Error('Email and new password are required');
+    const passwordHash = hashPassword(newPassword);
+    const { data, error } = await supabase
+      .from('users')
+      .update({
+        password_hash: passwordHash,
+        updated_at: new Date().toISOString()
+      })
+      .eq('email', email.trim().toLowerCase())
+      .select()
+      .single();
+
+    if (error) throw new Error(`User password update failed: ${error.message}`);
+    return {
+      id: String(data.id),
+      _id: String(data.id),
+      email: data.email,
+      role: data.role
+    };
+  },
+
   async countDocuments() {
     const { count, error } = await supabase
       .from('users')

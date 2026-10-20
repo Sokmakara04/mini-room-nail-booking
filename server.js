@@ -48,10 +48,14 @@ function getLang(req) {
   return acceptLang.toLowerCase().includes('km') ? 'km' : 'en';
 }
 
-// Basic Authentication for Admin Routes
+// Basic Authentication for Admin Routes (dynamically validates against process.env)
 const adminAuth = basicAuth({
-  users: {
-    [process.env.ADMIN_USERNAME || 'admin']: process.env.ADMIN_PASSWORD || 'admin123'
+  authorizer: (username, password) => {
+    const expectedUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
+    const expectedPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
+    const userMatches = basicAuth.safeCompare(username, expectedUsername);
+    const passMatches = basicAuth.safeCompare(password, expectedPassword);
+    return userMatches && passMatches;
   },
   challenge: true,
   unauthorizedResponse: (req) => 'Access denied: Admin credentials required.'
@@ -1050,11 +1054,11 @@ async function startServer() {
         console.warn('[Supabase Warning] Could not check or seed defaults:', seedErr.message);
       }
 
-      // Ensure admin user exists in Supabase users table
+      // Ensure admin user exists in Supabase users table and is in sync with .env
       try {
-        const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+        const adminUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
         const adminEmail = `${adminUsername}@miniroonail.local`;
-        const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+        const adminPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
         const existingAdmin = await User.findByEmail(adminEmail);
         if (!existingAdmin) {
           await User.createUser({
@@ -1063,6 +1067,9 @@ async function startServer() {
             role: 'admin'
           });
           console.log(`[Supabase] Seeded admin user (${adminEmail}) in users table.`);
+        } else if (!User.verifyPassword(adminPassword, existingAdmin.passwordHash)) {
+          await User.updatePassword(adminEmail, adminPassword);
+          console.log(`[Supabase] Synchronized admin password from .env for (${adminEmail}).`);
         }
       } catch (userErr) {
         // Non-blocking if table is not yet created

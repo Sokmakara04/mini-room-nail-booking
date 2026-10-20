@@ -156,6 +156,9 @@ async function runMigration() {
       role: 'admin'
     });
     console.log(`  ✓ Created initial admin user (${adminEmail}) in Supabase users table.`);
+  } else if (!User.verifyPassword(adminPassword, existingUser.passwordHash)) {
+    await User.updatePassword(adminEmail, adminPassword);
+    console.log(`  ✓ Synchronized admin user (${adminEmail}) password from .env in Supabase.`);
   } else {
     console.log(`  ✓ Admin user (${adminEmail}) already exists in Supabase users table.`);
   }

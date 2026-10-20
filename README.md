@@ -135,7 +135,7 @@ npm start
 ```
 
 - **Customer Website:** http://localhost:3000
-- **Admin Dashboard:** http://localhost:3000/admin (Default: `admin` / `123`)
+- **Admin Dashboard:** http://localhost:3000/admin (Configured via `ADMIN_USERNAME` / `ADMIN_PASSWORD` in `.env`)
 
 ---
 
