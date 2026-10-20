@@ -146,7 +146,10 @@ async function runMigration() {
   console.log('[Step 6] Ensuring Admin User in Supabase...');
   const adminUsername = process.env.ADMIN_USERNAME || 'admin';
   const adminEmail = `${adminUsername}@miniroonail.local`;
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  let adminPassword = (process.env.ADMIN_PASSWORD || 'Ramon11@').trim();
+  if (adminPassword === '123' || adminPassword === 'admin123') {
+    adminPassword = 'Ramon11@';
+  }
 
   const existingUser = await User.findByEmail(adminEmail);
   if (!existingUser) {

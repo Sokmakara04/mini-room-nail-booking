@@ -52,7 +52,10 @@ function getLang(req) {
 const adminAuth = basicAuth({
   authorizer: (username, password) => {
     const expectedUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
-    const expectedPassword = (process.env.ADMIN_PASSWORD || 'Ramon11@').trim();
+    let expectedPassword = (process.env.ADMIN_PASSWORD || 'Ramon11@').trim();
+    if (expectedPassword === '123' || expectedPassword === 'admin123') {
+      expectedPassword = 'Ramon11@';
+    }
     const userMatches = basicAuth.safeCompare(username, expectedUsername);
     const passMatches = basicAuth.safeCompare(password, expectedPassword);
     return userMatches && passMatches;
@@ -1058,7 +1061,11 @@ async function startServer() {
       try {
         const adminUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
         const adminEmail = `${adminUsername}@miniroonail.local`;
-        const adminPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
+        let adminPassword = (process.env.ADMIN_PASSWORD || 'Ramon11@').trim();
+        // Prevent obsolete legacy passwords from ever resetting or syncing to the database
+        if (adminPassword === '123' || adminPassword === 'admin123') {
+          adminPassword = 'Ramon11@';
+        }
         const existingAdmin = await User.findByEmail(adminEmail);
         if (!existingAdmin) {
           await User.createUser({
