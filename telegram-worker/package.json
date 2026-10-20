@@ -7,8 +7,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail",
-    "dev:polling": "node src/dev-polling.js"
+    "tail": "wrangler tail"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",

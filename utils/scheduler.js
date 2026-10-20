@@ -52,6 +52,26 @@ function getLocalCurrentTime(timeZone = DEFAULT_TIMEZONE) {
   return `${get('hour')}:${get('minute')}`;
 }
 
+function getPhnomPenhDateString(dateInput, timeZone = DEFAULT_TIMEZONE) {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(d);
+  const get = type => parts.find(p => p.type === type)?.value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+function getPhnomPenhDateRangeForUTC(startDateStr, endDateStr) {
+  const startUtc = new Date(`${startDateStr}T00:00:00+07:00`).toISOString();
+  const endUtc = new Date(`${endDateStr}T23:59:59.999+07:00`).toISOString();
+  return { startUtc, endUtc };
+}
+
 function getDayOfWeek(dateStr) {
   // YYYY-MM-DD to day of week: 0 = Sun, 1 = Mon ... 6 = Sat
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -203,5 +223,7 @@ module.exports = {
   getLocalCurrentTime,
   isDateWorkingDay,
   getAvailableSlots,
-  checkSlotAvailability
+  checkSlotAvailability,
+  getPhnomPenhDateString,
+  getPhnomPenhDateRangeForUTC
 };

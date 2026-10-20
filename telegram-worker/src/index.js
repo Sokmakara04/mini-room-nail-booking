@@ -700,9 +700,10 @@ async function handleUpdate(update, env) {
     // 2.1 Handle /start Command
     if (command === 'start') {
       if (isGroup) {
+        const botUsername = (env.TELEGRAM_BOT_USERNAME || 'miniroomnail_bot').replace(/^@/, '');
         await sendMessage(token, chatId, `💅 **${salonName} Bot** is active in this group.\n\nNew booking notifications will appear here with confirmation buttons.\nTo make an appointment privately, please click below:`, {
           reply_markup: {
-            inline_keyboard: [[{ text: '💬 Open Bot Private Chat', url: `https://t.me/salonstore_bot` }]]
+            inline_keyboard: [[{ text: '💬 Open Bot Private Chat', url: `https://t.me/${botUsername}` }]]
           }
         });
         return;

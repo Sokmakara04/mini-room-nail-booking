@@ -1,9 +1,12 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admin Dashboard | <%= salonName %></title>
+  <title>Mini Room Nail & Eyelash | Admin Dashboard</title>
+  <link rel="icon" type="image/png" href="/images/favicon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   <style>
@@ -14,6 +17,7 @@
       padding: 0.8rem 1.4rem;
       border-radius: var(--radius-md) var(--radius-md) 0 0;
     }
+
     .nav-tabs .nav-link.active {
       color: var(--primary);
       background: #ffffff;
@@ -21,6 +25,7 @@
     }
   </style>
 </head>
+
 <body style="background: #f8f3f4;">
   <!-- Admin Navbar -->
   <nav class="salon-nav bg-white">
@@ -42,424 +47,652 @@
     <div class="admin-stats-grid">
       <div class="admin-stat-card">
         <div class="admin-stat-lbl">TODAY'S BOOKINGS</div>
-        <div class="admin-stat-val text-primary"><%= stats.todayCount %></div>
+        <div class="admin-stat-val text-primary">
+          <%= stats.todayCount %>
+        </div>
       </div>
       <div class="admin-stat-card">
         <div class="admin-stat-lbl">PENDING CONFIRMATION</div>
-        <div class="admin-stat-val text-warning"><%= stats.pendingCount %></div>
+        <div class="admin-stat-val text-warning">
+          <%= stats.pendingCount %>
+        </div>
       </div>
       <div class="admin-stat-card">
         <div class="admin-stat-lbl">CONFIRMED APPOINTMENTS</div>
-        <div class="admin-stat-val text-success"><%= stats.confirmedCount %></div>
+        <div class="admin-stat-val text-success">
+          <%= stats.confirmedCount %>
+        </div>
       </div>
       <div class="admin-stat-card">
         <div class="admin-stat-lbl">TOTAL ALL TIME</div>
-        <div class="admin-stat-val text-dark"><%= stats.totalCount %></div>
+        <div class="admin-stat-val text-dark">
+          <%= stats.totalCount %>
+        </div>
       </div>
     </div>
 
     <!-- Flash message alert -->
-    <% if (typeof alertMessage !== 'undefined' && alertMessage) { %>
+    <% if (typeof alertMessage !=='undefined' && alertMessage) { %>
       <div class="alert alert-<%= alertType || 'info' %> alert-dismissible fade show" role="alert">
         <%= alertMessage %>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
-    <% } %>
+      <% } %>
 
-    <!-- Navigation Tabs -->
-    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
-      <li class="nav-item">
-        <button class="nav-link <%= activeTab === 'bookings' ? 'active' : '' %>" id="bookings-tab" data-bs-toggle="tab" data-bs-target="#bookings-pane" type="button">
-          📅 Appointments (<%= bookings.length %>)
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link <%= activeTab === 'services' ? 'active' : '' %>" id="services-tab" data-bs-toggle="tab" data-bs-target="#services-pane" type="button">
-          💅 Fingernail Services (<%= services.length %>)
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link <%= activeTab === 'schedule' ? 'active' : '' %>" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule-pane" type="button">
-          ⚙️ Salon Schedule & Hours
-        </button>
-      </li>
-    </ul>
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+          <li class="nav-item">
+            <button class="nav-link <%= activeTab === 'bookings' ? 'active' : '' %>" id="bookings-tab"
+              data-bs-toggle="tab" data-bs-target="#bookings-pane" type="button">
+              📅 Appointments (<%= bookings.length %>)
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link <%= activeTab === 'calendar' ? 'active' : '' %>" id="calendar-tab"
+              data-bs-toggle="tab" data-bs-target="#calendar-pane" type="button">
+              🗓️ Booking Calendar
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link <%= activeTab === 'services' ? 'active' : '' %>" id="services-tab"
+              data-bs-toggle="tab" data-bs-target="#services-pane" type="button">
+              💅 Fingernail Services (<%= services.length %>)
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link <%= activeTab === 'schedule' ? 'active' : '' %>" id="schedule-tab"
+              data-bs-toggle="tab" data-bs-target="#schedule-pane" type="button">
+              ⚙️ Salon Schedule & Hours
+            </button>
+          </li>
+        </ul>
 
-    <div class="tab-content" id="adminTabsContent">
-      <!-- TAB 1: APPOINTMENTS -->
-      <div class="tab-pane fade <%= activeTab === 'bookings' ? 'show active' : '' %>" id="bookings-pane">
-        <!-- Filter and Search Bar -->
-        <div class="glass-card mb-4 p-3 bg-white shadow-sm">
-          <!-- Quick Range Filter Buttons & Date Range Label -->
-          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
-            <div class="d-flex align-items-center flex-wrap gap-2">
-              <span class="badge bg-primary text-white fs-6 py-2 px-3">
-                📅 <%= dateRangeLabel %>
-              </span>
-              <span class="badge bg-light text-secondary border py-2 px-2">
-                🌐 <%= timeZone %>
-              </span>
-            </div>
-            <div class="btn-group btn-group-sm" role="group">
-              <a href="/admin?tab=bookings&view=7days" class="btn <%= viewMode === '7days' ? 'btn-dark' : 'btn-outline-secondary' %>">
-                🗓️ Rolling 7 Days (Default)
-              </a>
-              <a href="/admin?tab=bookings&view=today" class="btn <%= viewMode === 'today' ? 'btn-dark' : 'btn-outline-secondary' %>">
-                ⚡ Today
-              </a>
-              <a href="/admin?tab=bookings&view=upcoming" class="btn <%= viewMode === 'upcoming' ? 'btn-dark' : 'btn-outline-secondary' %>">
-                🔜 All Upcoming
-              </a>
-              <a href="/admin?tab=bookings&view=all" class="btn <%= viewMode === 'all' ? 'btn-dark' : 'btn-outline-secondary' %>">
-                📚 All History
-              </a>
-            </div>
-          </div>
+        <div class="tab-content" id="adminTabsContent">
+          <!-- TAB 1: APPOINTMENTS -->
+          <div class="tab-pane fade <%= activeTab === 'bookings' ? 'show active' : '' %>" id="bookings-pane">
+            <!-- Filter and Search Bar -->
+            <div class="glass-card mb-4 p-3 bg-white shadow-sm">
+              <!-- Quick Range Filter Buttons & Date Range Label -->
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                  <span class="badge bg-primary text-white fs-6 py-2 px-3">
+                    📅 <%= dateRangeLabel %>
+                  </span>
+                  <span class="badge bg-light text-secondary border py-2 px-2">
+                    🌐 <%= timeZone %>
+                  </span>
+                </div>
+                <div class="btn-group btn-group-sm" role="group">
+                  <a href="/admin?tab=bookings&view=7days"
+                    class="btn <%= viewMode === '7days' ? 'btn-dark' : 'btn-outline-secondary' %>">
+                    🗓️ Rolling 7 Days (Default)
+                  </a>
+                  <a href="/admin?tab=bookings&view=today"
+                    class="btn <%= viewMode === 'today' ? 'btn-dark' : 'btn-outline-secondary' %>">
+                    ⚡ Today
+                  </a>
+                  <a href="/admin?tab=bookings&view=upcoming"
+                    class="btn <%= viewMode === 'upcoming' ? 'btn-dark' : 'btn-outline-secondary' %>">
+                    🔜 All Upcoming
+                  </a>
+                  <a href="/admin?tab=bookings&view=all"
+                    class="btn <%= viewMode === 'all' ? 'btn-dark' : 'btn-outline-secondary' %>">
+                    📚 All History
+                  </a>
+                </div>
+              </div>
 
-          <form method="get" action="/admin" class="row g-2 align-items-center">
-            <input type="hidden" name="tab" value="bookings">
-            <input type="hidden" name="view" value="custom">
-            <div class="col-md-3">
-              <label class="form-label small fw-bold text-muted mb-1">Filter by Specific Date</label>
-              <input type="date" name="filterDate" class="form-control form-control-sm" value="<%= filters.filterDate || '' %>">
-            </div>
-            <div class="col-md-3">
-              <label class="form-label small fw-bold text-muted mb-1">Status</label>
-              <select name="filterStatus" class="form-select form-select-sm">
-                <option value="">All Statuses</option>
-                <% ['pending', 'confirmed', 'rejected', 'cancelled', 'completed'].forEach(s => { %>
-                  <option value="<%= s %>" <%= filters.filterStatus === s ? 'selected' : '' %>><%= s.toUpperCase() %></option>
-                <% }) %>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label small fw-bold text-muted mb-1">Search Customer / Phone / Reference</label>
-              <input type="text" name="search" class="form-control form-control-sm" placeholder="Search by name, phone or NL-XXXXXX" value="<%= filters.search || '' %>">
-            </div>
-            <div class="col-md-2 d-flex gap-2 align-self-end">
-              <button type="submit" class="btn btn-sm btn-dark w-100">Filter</button>
-              <a href="/admin?tab=bookings" class="btn btn-sm btn-outline-secondary">Reset</a>
-            </div>
-          </form>
-        </div>
-
-        <!-- Appointments Table -->
-        <div class="glass-card p-0 bg-white overflow-hidden shadow-sm">
-          <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="table-light small text-uppercase fw-bold">
-                <tr>
-                  <th class="ps-3">Reference / Date</th>
-                  <th>Customer & Contact</th>
-                  <th>Fingernail Service</th>
-                  <th>Time Slot</th>
-                  <th>Status</th>
-                  <th class="text-end pe-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody class="small">
-                <% if (!bookings.length) { %>
-                  <tr>
-                    <td colspan="6" class="text-center py-5 text-secondary">
-                      No nail appointments match the selected filter.
-                    </td>
-                  </tr>
-                <% } %>
-                <% bookings.forEach(b => { %>
-                  <tr>
-                    <td class="ps-3">
-                      <strong class="text-primary font-monospace"><%= b.bookingReference %></strong>
-                      <div class="text-dark fw-bold"><%= b.date %></div>
-                      <small class="badge bg-light text-secondary"><%= b.source.toUpperCase() %></small>
-                    </td>
-                    <td>
-                      <div class="fw-bold text-dark"><%= b.customerName %></div>
-                      <div><a href="tel:<%= b.phone %>" class="text-decoration-none text-secondary"><%= b.phone %></a></div>
-                      <% if (b.telegramId) { %>
-                        <small class="text-primary">Telegram ID: <%= b.telegramId %></small>
-                      <% } %>
-                      <% if (b.notes) { %>
-                        <div class="text-muted small fst-italic">"<%= b.notes %>"</div>
-                      <% } %>
-                    </td>
-                    <td>
-                      <strong><%= b.service %></strong>
-                      <div class="text-muted small"><%= b.serviceKm %></div>
-                      <div class="text-danger fw-bold">$<%= b.price %></div>
-                    </td>
-                    <td>
-                      <strong><%= b.time %> - <%= b.endTime %></strong>
-                      <div class="text-muted small">(<%= b.durationMinutes %> mins)</div>
-                    </td>
-                    <td>
-                      <span class="badge-status badge-<%= b.status %>"><%= b.status %></span>
-                    </td>
-                    <td class="text-end pe-3">
-                      <div class="d-inline-flex gap-1">
-                        <% if (b.status === 'pending') { %>
-                          <!-- Quick Confirm -->
-                          <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
-                            <input type="hidden" name="status" value="confirmed">
-                            <button type="submit" class="btn btn-sm btn-success px-2 py-1" title="Confirm booking">✓ Confirm</button>
-                          </form>
-                          <!-- Quick Reject -->
-                          <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
-                            <input type="hidden" name="status" value="rejected">
-                            <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1" title="Reject booking">✕ Reject</button>
-                          </form>
-                        <% } else if (b.status === 'confirmed') { %>
-                          <!-- Mark Completed -->
-                          <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
-                            <input type="hidden" name="status" value="completed">
-                            <button type="submit" class="btn btn-sm btn-outline-primary px-2 py-1" title="Complete appointment">Complete</button>
-                          </form>
-                          <!-- Cancel -->
-                          <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline" onsubmit="return confirm('Cancel this confirmed appointment?');">
-                            <input type="hidden" name="status" value="cancelled">
-                            <button type="submit" class="btn btn-sm btn-outline-secondary px-2 py-1">Cancel</button>
-                          </form>
-                        <% } else { %>
-                          <span class="text-muted small fst-italic me-2">Archived</span>
-                        <% } %>
-
-                        <!-- Reschedule Button (opens modal) -->
-                        <button type="button" class="btn btn-sm btn-light border px-2 py-1" 
-                          data-bs-toggle="modal" 
-                          data-bs-target="#rescheduleModal"
-                          data-id="<%= b._id %>"
-                          data-ref="<%= b.bookingReference %>"
-                          data-date="<%= b.date %>"
-                          data-time="<%= b.time %>"
-                          data-duration="<%= b.durationMinutes %>"
-                          data-name="<%= b.customerName %>">
-                          🗓️ Reschedule
-                        </button>
-
-                        <!-- Delete Button (opens confirmation modal) -->
-                        <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1"
-                          data-bs-toggle="modal"
-                          data-bs-target="#deleteBookingModal"
-                          data-id="<%= b._id %>"
-                          data-ref="<%= b.bookingReference %>"
-                          data-name="<%= b.customerName %>"
-                          data-service="<%= b.service %>"
-                          data-date="<%= b.date %>"
-                          data-time="<%= b.time %>"
-                          title="Delete this booking record">
-                          🗑️ Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB 2: FINGERNAIL SERVICES CRUD -->
-      <div class="tab-pane fade <%= activeTab === 'services' ? 'show active' : '' %>" id="services-pane">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <h4 class="fw-bold mb-0">Fingernail Services Catalog</h4>
-            <p class="text-secondary small mb-0">Manage services, prices, durations, and active status.</p>
-          </div>
-          <button type="button" class="btn-nail btn-sm" data-bs-toggle="modal" data-bs-target="#addServiceModal">
-            + Add Nail Service
-          </button>
-        </div>
-
-        <div class="glass-card p-0 bg-white overflow-hidden shadow-sm">
-          <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="table-light small text-uppercase fw-bold">
-                <tr>
-                  <th class="ps-3">Service Image & Name</th>
-                  <th>Khmer Name</th>
-                  <th>Price ($)</th>
-                  <th>Duration</th>
-                  <th>Status</th>
-                  <th class="text-end pe-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody class="small">
-                <% services.forEach(s => { %>
-                  <tr>
-                    <td class="ps-3">
-                      <div class="d-flex align-items-center gap-2">
-                        <img src="<%= s.imageUrl || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=150&q=80' %>" 
-                             alt="<%= s.name %>" class="rounded-3 border" style="width: 44px; height: 44px; object-fit: cover;">
-                        <div>
-                          <strong><%= s.name %></strong>
-                          <div class="text-muted small" style="max-width: 250px;"><%= s.description %></div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <strong class="text-dark"><%= s.nameKm %></strong>
-                      <div class="text-muted small" style="max-width: 250px;"><%= s.descriptionKm %></div>
-                    </td>
-                    <td>
-                      <span class="text-danger fw-bold fs-6">$<%= s.price %></span>
-                    </td>
-                    <td>
-                      ⏱️ <%= s.durationMinutes %> mins
-                    </td>
-                    <td>
-                      <% if (s.isActive) { %>
-                        <span class="badge bg-success-subtle text-success fw-bold">Active</span>
-                      <% } else { %>
-                        <span class="badge bg-secondary-subtle text-secondary fw-bold">Inactive</span>
-                      <% } %>
-                    </td>
-                    <td class="text-end pe-3">
-                      <!-- Toggle Active -->
-                      <form method="post" action="/admin/services/<%= s._id %>/toggle" class="d-inline">
-                        <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Toggle active status">
-                          <%= s.isActive ? 'Deactivate' : 'Activate' %>
-                        </button>
-                      </form>
-
-                      <!-- Edit Button (Modal) -->
-                      <button type="button" class="btn btn-sm btn-outline-dark py-1 px-2 ms-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#editServiceModal"
-                        data-id="<%= s._id %>"
-                        data-name="<%= s.name %>"
-                        data-namekm="<%= s.nameKm %>"
-                        data-price="<%= s.price %>"
-                        data-duration="<%= s.durationMinutes %>"
-                        data-desc="<%= s.description %>"
-                        data-desckm="<%= s.descriptionKm %>"
-                        data-image="<%= s.imageUrl %>">
-                        Edit
-                      </button>
-
-                      <!-- Delete Service -->
-                      <form method="post" action="/admin/services/<%= s._id %>/delete" class="d-inline ms-1" onsubmit="return confirm('Delete this fingernail service?');">
-                        <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2">Delete</button>
-                      </form>
-                    </td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB 3: SALON SCHEDULE & HOURS -->
-      <div class="tab-pane fade <%= activeTab === 'schedule' ? 'show active' : '' %>" id="schedule-pane">
-        <div class="row g-4">
-          <div class="col-lg-7">
-            <div class="glass-card bg-white p-4">
-              <h4 class="fw-bold mb-3">Operating Hours & Capacity</h4>
-              <form method="post" action="/admin/settings">
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Salon Name</label>
-                    <input type="text" name="salonName" class="form-control" value="<%= settings.salonName %>" required>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Salon Contact Phone</label>
-                    <input type="text" name="salonPhone" class="form-control" value="<%= settings.salonPhone %>" required>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Opening Time (24h)</label>
-                    <input type="time" name="openingTime" class="form-control" value="<%= settings.openingTime %>" required>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Closing Time (24h)</label>
-                    <input type="time" name="closingTime" class="form-control" value="<%= settings.closingTime %>" required>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Break Start Time</label>
-                    <input type="time" name="breakStart" class="form-control" value="<%= settings.breakStart %>">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Break End Time</label>
-                    <input type="time" name="breakEnd" class="form-control" value="<%= settings.breakEnd %>">
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Booking Slot Interval (Minutes)</label>
-                    <select name="slotIntervalMinutes" class="form-select">
-                      <% [15, 20, 30, 45, 60].forEach(m => { %>
-                        <option value="<%= m %>" <%= settings.slotIntervalMinutes === m ? 'selected' : '' %>><%= m %> minutes</option>
+              <form method="get" action="/admin" class="row g-2 align-items-center">
+                <input type="hidden" name="tab" value="bookings">
+                <input type="hidden" name="view" value="custom">
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold text-muted mb-1">Filter by Specific Date</label>
+                  <input type="date" name="filterDate" class="form-control form-control-sm"
+                    value="<%= filters.filterDate || '' %>">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold text-muted mb-1">Status</label>
+                  <select name="filterStatus" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <% ['pending', 'confirmed' , 'rejected' , 'cancelled' , 'completed' ].forEach(s=> { %>
+                      <option value="<%= s %>" <%=filters.filterStatus===s ? 'selected' : '' %>><%= s.toUpperCase() %>
+                      </option>
                       <% }) %>
-                    </select>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Max Concurrent Stations / Staff</label>
-                    <input type="number" name="maxConcurrentStaff" class="form-control" min="1" max="20" value="<%= settings.maxConcurrentStaff %>" required>
-                    <small class="text-muted">Simultaneous clients that can be served at the same time.</small>
-                  </div>
-
-                  <div class="col-12">
-                    <label class="form-label fw-bold small d-block">Working Days</label>
-                    <div class="d-flex flex-wrap gap-3">
-                      <% const days = [
-                        { d: 1, label: 'Mon' },
-                        { d: 2, label: 'Tue' },
-                        { d: 3, label: 'Wed' },
-                        { d: 4, label: 'Thu' },
-                        { d: 5, label: 'Fri' },
-                        { d: 6, label: 'Sat' },
-                        { d: 0, label: 'Sun' }
-                      ]; %>
-                      <% days.forEach(day => { %>
-                        <div class="form-check">
-                          <input class="form-check-input" type="checkbox" name="workingDays" value="<%= day.d %>" id="day_<%= day.d %>" 
-                            <%= settings.workingDays.includes(day.d) ? 'checked' : '' %>>
-                          <label class="form-check-label small fw-bold" for="day_<%= day.d %>"><%= day.label %></label>
-                        </div>
-                      <% }) %>
-                    </div>
-                  </div>
-
-                  <div class="col-12 mt-4">
-                    <button type="submit" class="btn-nail">💾 Save Schedule Settings</button>
-                  </div>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold text-muted mb-1">Search Customer / Phone / Reference</label>
+                  <input type="text" name="search" class="form-control form-control-sm"
+                    placeholder="Search by name, phone or NL-XXXXXX" value="<%= filters.search || '' %>">
+                </div>
+                <div class="col-md-2 d-flex gap-2 align-self-end">
+                  <button type="submit" class="btn btn-sm btn-dark w-100">Filter</button>
+                  <a href="/admin?tab=bookings" class="btn btn-sm btn-outline-secondary">Reset</a>
                 </div>
               </form>
             </div>
+
+            <!-- Appointments Table -->
+            <div class="glass-card p-0 bg-white overflow-hidden shadow-sm">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light small text-uppercase fw-bold">
+                    <tr>
+                      <th class="ps-3">Reference / Date</th>
+                      <th>Customer & Contact</th>
+                      <th>Fingernail Service</th>
+                      <th>Time Slot</th>
+                      <th>Status</th>
+                      <th class="text-end pe-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="small">
+                    <% if (!bookings.length) { %>
+                      <tr>
+                        <td colspan="6" class="text-center py-5 text-secondary">
+                          No nail appointments match the selected filter.
+                        </td>
+                      </tr>
+                      <% } %>
+                        <% bookings.forEach(b=> { %>
+                          <tr>
+                            <td class="ps-3">
+                              <strong class="text-primary font-monospace">
+                                <%= b.bookingReference %>
+                              </strong>
+                              <div class="text-dark fw-bold">
+                                <%= b.date %>
+                              </div>
+                              <small class="badge bg-light text-secondary">
+                                <%= b.source.toUpperCase() %>
+                              </small>
+                            </td>
+                            <td>
+                              <div class="fw-bold text-dark">
+                                <%= b.customerName %>
+                              </div>
+                              <div><a href="tel:<%= b.phone %>" class="text-decoration-none text-secondary">
+                                  <%= b.phone %>
+                                </a></div>
+                              <% if (b.telegramId) { %>
+                                <small class="text-primary">Telegram ID: <%= b.telegramId %></small>
+                                <% } %>
+                                  <% if (b.notes) { %>
+                                    <div class="text-muted small fst-italic">"<%= b.notes %>"</div>
+                                    <% } %>
+                            </td>
+                            <td>
+                              <strong>
+                                <%= b.service %>
+                              </strong>
+                              <div class="text-muted small">
+                                <%= b.serviceKm %>
+                              </div>
+                              <div class="text-danger fw-bold">$<%= b.price %>
+                              </div>
+                            </td>
+                            <td>
+                              <strong>
+                                <%= b.time %> - <%= b.endTime %>
+                              </strong>
+                              <div class="text-muted small">(<%= b.durationMinutes %> mins)</div>
+                            </td>
+                            <td>
+                              <span class="badge-status badge-<%= b.status %>">
+                                <%= b.status %>
+                              </span>
+                            </td>
+                            <td class="text-end pe-3">
+                              <div class="d-inline-flex gap-1">
+                                <% if (b.status==='pending' ) { %>
+                                  <!-- Quick Confirm -->
+                                  <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
+                                    <input type="hidden" name="status" value="confirmed">
+                                    <button type="submit" class="btn btn-sm btn-success px-2 py-1"
+                                      title="Confirm booking">✓ Confirm</button>
+                                  </form>
+                                  <!-- Quick Reject -->
+                                  <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
+                                    <input type="hidden" name="status" value="rejected">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1"
+                                      title="Reject booking">✕ Reject</button>
+                                  </form>
+                                  <% } else if (b.status==='confirmed' ) { %>
+                                    <!-- Mark Completed -->
+                                    <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
+                                      <input type="hidden" name="status" value="completed">
+                                      <button type="submit" class="btn btn-sm btn-outline-primary px-2 py-1"
+                                        title="Complete appointment">Complete</button>
+                                    </form>
+                                    <!-- Cancel -->
+                                    <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline"
+                                      onsubmit="return confirm('Cancel this confirmed appointment?');">
+                                      <input type="hidden" name="status" value="cancelled">
+                                      <button type="submit"
+                                        class="btn btn-sm btn-outline-secondary px-2 py-1">Cancel</button>
+                                    </form>
+                                    <% } else { %>
+                                      <span class="text-muted small fst-italic me-2">Archived</span>
+                                      <% } %>
+
+                                        <!-- Reschedule Button (opens modal) -->
+                                        <button type="button" class="btn btn-sm btn-light border px-2 py-1"
+                                          data-bs-toggle="modal" data-bs-target="#rescheduleModal"
+                                          data-id="<%= b._id %>" data-ref="<%= b.bookingReference %>"
+                                          data-date="<%= b.date %>" data-time="<%= b.time %>"
+                                          data-duration="<%= b.durationMinutes %>" data-name="<%= b.customerName %>">
+                                          🗓️ Reschedule
+                                        </button>
+
+                                        <!-- Delete Button (opens confirmation modal) -->
+                                        <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1"
+                                          data-bs-toggle="modal" data-bs-target="#deleteBookingModal"
+                                          data-id="<%= b._id %>" data-ref="<%= b.bookingReference %>"
+                                          data-name="<%= b.customerName %>" data-service="<%= b.service %>"
+                                          data-date="<%= b.date %>" data-time="<%= b.time %>"
+                                          title="Delete this booking record">
+                                          🗑️ Delete
+                                        </button>
+                              </div>
+                            </td>
+                          </tr>
+                          <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
-          <div class="col-lg-5">
-            <div class="glass-card bg-white p-4">
-              <h5 class="fw-bold mb-3">Salon Days Off & Holidays</h5>
-              <p class="text-secondary small">Clients will not be allowed to book on dates added to this list.</p>
+          <!-- TAB: BOOKING CALENDAR -->
+          <div class="tab-pane fade <%= activeTab === 'calendar' ? 'show active' : '' %>" id="calendar-pane">
+            <!-- Calendar Controls & Filter Toolbar -->
+            <div class="glass-card mb-4 p-3 bg-white shadow-sm">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                  <span class="badge bg-primary text-white fs-6 py-2 px-3">
+                    🗓️ Booking Calendar
+                  </span>
+                  <span class="badge bg-light text-secondary border py-2 px-2">
+                    🌐 Asia/Phnom_Penh (UTC+7)
+                  </span>
+                  <span class="badge bg-dark py-2 px-3" id="calMonthTotalBadge">
+                    Loading...
+                  </span>
+                </div>
 
-              <!-- Add Day Off Form -->
-              <form method="post" action="/admin/daysoff/add" class="d-flex gap-2 mb-3">
-                <input type="date" name="dayOffDate" class="form-control form-control-sm" required min="<%= today %>">
-                <button type="submit" class="btn btn-sm btn-dark text-nowrap">+ Add Day Off</button>
-              </form>
+                <!-- Quick View / Navigation buttons -->
+                <div class="d-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="calPrevBtn" title="Previous Month">
+                    ‹ Previous
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-primary fw-bold" id="calTodayBtn"
+                    title="Jump to Today in Phnom Penh">
+                    ⚡ Today
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="calNextBtn" title="Next Month">
+                    Next ›
+                  </button>
+                  <button type="button" class="btn btn-sm btn-light border" id="calRefreshBtn" title="Refresh calendar">
+                    🔄
+                  </button>
+                </div>
+              </div>
 
-              <!-- Days Off List -->
-              <ul class="list-group list-group-flush border rounded-3 overflow-hidden">
-                <% if (!settings.daysOff || settings.daysOff.length === 0) { %>
-                  <li class="list-group-item text-muted small text-center py-3">No custom days off scheduled.</li>
-                <% } %>
-                <% (settings.daysOff || []).sort().forEach(d => { %>
-                  <li class="list-group-item d-flex justify-content-between align-items-center small">
-                    <span>🗓️ <strong><%= d %></strong></span>
-                    <form method="post" action="/admin/daysoff/remove" class="d-inline">
-                      <input type="hidden" name="dayOffDate" value="<%= d %>">
-                      <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">Remove</button>
-                    </form>
-                  </li>
-                <% }) %>
-              </ul>
+              <!-- Filter Form Controls -->
+              <div class="row g-2 align-items-end">
+                <!-- Month Selector -->
+                <div class="col-md-3 col-sm-6">
+                  <label class="form-label small fw-bold text-muted mb-1">Select Month / Year</label>
+                  <input type="month" id="calMonthPicker" class="form-control form-control-sm"
+                    value="<%= today.slice(0, 7) %>">
+                </div>
+
+                <!-- Date Type Basis -->
+                <div class="col-md-3 col-sm-6">
+                  <label class="form-label small fw-bold text-muted mb-1">Filter Basis</label>
+                  <select id="calDateType" class="form-select form-select-sm">
+                    <option value="appointment" selected>📅 Appointment Date (date)</option>
+                    <option value="created">⏱️ Record Created Date (created_at)</option>
+                  </select>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="col-md-2 col-sm-6">
+                  <label class="form-label small fw-bold text-muted mb-1">Booking Status</label>
+                  <select id="calStatusFilter" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="pending">PENDING</option>
+                    <option value="confirmed">CONFIRMED</option>
+                    <option value="completed">COMPLETED</option>
+                    <option value="cancelled">CANCELLED</option>
+                    <option value="rejected">REJECTED</option>
+                  </select>
+                </div>
+
+                <!-- Range Filter Toggle & Inputs -->
+                <div class="col-md-4 col-sm-12">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <label class="form-label small fw-bold text-muted mb-0">Custom Date Range</label>
+                    <div class="form-check form-switch mb-0">
+                      <input class="form-check-input" type="checkbox" id="calRangeToggle">
+                      <label class="form-check-label small text-muted" for="calRangeToggle">Enable Range</label>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-1" id="calRangeInputsContainer" style="display: none !important;">
+                    <input type="date" id="calRangeStart" class="form-control form-control-sm" placeholder="Start">
+                    <input type="date" id="calRangeEnd" class="form-control form-control-sm" placeholder="End">
+                    <button type="button" id="calRangeApplyBtn" class="btn btn-sm btn-dark px-2">Apply</button>
+                  </div>
+                  <div id="calRangeHint" class="small text-muted text-truncate">
+                    Click any day on calendar to view that day's bookings.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2-Column Calendar & Bookings Details Layout -->
+            <div class="row g-3">
+              <!-- Left Column: Calendar Grid -->
+              <div class="col-lg-7">
+                <div class="glass-card p-3 bg-white shadow-sm">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-dark" id="calMonthTitle">October 2026</h5>
+                    <div class="d-flex gap-1" id="calMonthStatusBadges">
+                      <!-- Dynamically populated status pills for the month -->
+                    </div>
+                  </div>
+
+                  <!-- Day-of-week header -->
+                  <div class="calendar-grid-header">
+                    <div class="weekend">Sun</div>
+                    <div>Mon</div>
+                    <div>Tue</div>
+                    <div>Wed</div>
+                    <div>Thu</div>
+                    <div>Fri</div>
+                    <div class="weekend">Sat</div>
+                  </div>
+
+                  <!-- Calendar Day Cells Matrix -->
+                  <div class="calendar-grid" id="calGrid">
+                    <!-- Dynamically populated cells -->
+                  </div>
+
+                  <!-- Legend footer -->
+                  <div
+                    class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 pt-2 border-top small text-muted">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <span class="fw-bold">Legend:</span>
+                      <span class="cal-status-dot cal-dot-pending">🟡 Pending</span>
+                      <span class="cal-status-dot cal-dot-confirmed">🟢 Confirmed</span>
+                      <span class="cal-status-dot cal-dot-completed">🔵 Completed</span>
+                      <span class="cal-status-dot cal-dot-cancelled">⚪ Cancelled</span>
+                      <span class="cal-status-dot cal-dot-rejected">🔴 Rejected</span>
+                    </div>
+                    <div class="fst-italic text-secondary">
+                      * Based on Asia/Phnom_Penh timezone
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column: Selected Date Bookings List -->
+              <div class="col-lg-5">
+                <div class="glass-card p-3 bg-white shadow-sm position-sticky" style="top: 85px;">
+                  <!-- Selected Date Header -->
+                  <div class="d-flex justify-content-between align-items-start mb-3 pb-2 border-bottom">
+                    <div>
+                      <h6 class="fw-bold mb-1 text-dark" id="calSelectedDateHeader">📅 Select a date</h6>
+                      <div class="small text-muted" id="calSelectedDateSubtext">Click on any date to inspect
+                        appointments</div>
+                    </div>
+                    <div class="text-end">
+                      <span class="badge bg-primary fs-6" id="calSelectedCountBadge">0 Bookings</span>
+                    </div>
+                  </div>
+
+                  <!-- Loading Indicator -->
+                  <div id="calDetailLoading" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                    <span class="ms-2 text-muted small">Loading appointments...</span>
+                  </div>
+
+                  <!-- Error Alert -->
+                  <div id="calDetailError" class="alert alert-danger small py-2 mb-3" style="display: none;">
+                    Failed to load appointments. <button type="button"
+                      class="btn btn-sm btn-link p-0 text-danger fw-bold" id="calDetailRetryBtn">Retry</button>
+                  </div>
+
+                  <!-- Empty Date Notice -->
+                  <div id="calDetailEmpty" class="text-center py-5 text-muted" style="display: none;">
+                    <div class="fs-1 mb-2">💅</div>
+                    <div class="fw-bold">No bookings for this date</div>
+                    <div class="small">គ្មានការកក់ទុកសម្រាប់កាលបរិច្ឆេទនេះទេ</div>
+                  </div>
+
+                  <!-- Bookings List Container -->
+                  <div id="calBookingsList" class="d-flex flex-column gap-2"
+                    style="max-height: 580px; overflow-y: auto; padding-right: 4px;">
+                    <!-- Populated via JavaScript -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: FINGERNAIL SERVICES CRUD -->
+          <div class="tab-pane fade <%= activeTab === 'services' ? 'show active' : '' %>" id="services-pane">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h4 class="fw-bold mb-0">Fingernail Services Catalog</h4>
+                <p class="text-secondary small mb-0">Manage services, prices, durations, and active status.</p>
+              </div>
+              <button type="button" class="btn-nail btn-sm" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+                + Add Nail Service
+              </button>
+            </div>
+
+            <div class="glass-card p-0 bg-white overflow-hidden shadow-sm">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light small text-uppercase fw-bold">
+                    <tr>
+                      <th class="ps-3">Service Image & Name</th>
+                      <th>Khmer Name</th>
+                      <th>Price ($)</th>
+                      <th>Duration</th>
+                      <th>Status</th>
+                      <th class="text-end pe-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="small">
+                    <% services.forEach(s=> { %>
+                      <tr>
+                        <td class="ps-3">
+                          <div class="d-flex align-items-center gap-2">
+                            <img
+                              src="<%= s.imageUrl || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=150&q=80' %>"
+                              alt="<%= s.name %>" class="rounded-3 border"
+                              style="width: 44px; height: 44px; object-fit: cover;">
+                            <div>
+                              <strong>
+                                <%= s.name %>
+                              </strong>
+                              <div class="text-muted small" style="max-width: 250px;">
+                                <%= s.description %>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <strong class="text-dark">
+                            <%= s.nameKm %>
+                          </strong>
+                          <div class="text-muted small" style="max-width: 250px;">
+                            <%= s.descriptionKm %>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="text-danger fw-bold fs-6">$<%= s.price %></span>
+                        </td>
+                        <td>
+                          ⏱️ <%= s.durationMinutes %> mins
+                        </td>
+                        <td>
+                          <% if (s.isActive) { %>
+                            <span class="badge bg-success-subtle text-success fw-bold">Active</span>
+                            <% } else { %>
+                              <span class="badge bg-secondary-subtle text-secondary fw-bold">Inactive</span>
+                              <% } %>
+                        </td>
+                        <td class="text-end pe-3">
+                          <!-- Toggle Active -->
+                          <form method="post" action="/admin/services/<%= s._id %>/toggle" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2"
+                              title="Toggle active status">
+                              <%= s.isActive ? 'Deactivate' : 'Activate' %>
+                            </button>
+                          </form>
+
+                          <!-- Edit Button (Modal) -->
+                          <button type="button" class="btn btn-sm btn-outline-dark py-1 px-2 ms-1"
+                            data-bs-toggle="modal" data-bs-target="#editServiceModal" data-id="<%= s._id %>"
+                            data-name="<%= s.name %>" data-namekm="<%= s.nameKm %>" data-price="<%= s.price %>"
+                            data-duration="<%= s.durationMinutes %>" data-desc="<%= s.description %>"
+                            data-desckm="<%= s.descriptionKm %>" data-image="<%= s.imageUrl %>">
+                            Edit
+                          </button>
+
+                          <!-- Delete Service -->
+                          <form method="post" action="/admin/services/<%= s._id %>/delete" class="d-inline ms-1"
+                            onsubmit="return confirm('Delete this fingernail service?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2">Delete</button>
+                          </form>
+                        </td>
+                      </tr>
+                      <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: SALON SCHEDULE & HOURS -->
+          <div class="tab-pane fade <%= activeTab === 'schedule' ? 'show active' : '' %>" id="schedule-pane">
+            <div class="row g-4">
+              <div class="col-lg-7">
+                <div class="glass-card bg-white p-4">
+                  <h4 class="fw-bold mb-3">Operating Hours & Capacity</h4>
+                  <form method="post" action="/admin/settings">
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label fw-bold small">Salon Name</label>
+                        <input type="text" name="salonName" class="form-control" value="<%= settings.salonName %>"
+                          required>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label fw-bold small">Salon Contact Phone</label>
+                        <input type="text" name="salonPhone" class="form-control" value="<%= settings.salonPhone %>"
+                          required>
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label fw-bold small">Opening Time (24h)</label>
+                        <input type="time" name="openingTime" class="form-control" value="<%= settings.openingTime %>"
+                          required>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label fw-bold small">Closing Time (24h)</label>
+                        <input type="time" name="closingTime" class="form-control" value="<%= settings.closingTime %>"
+                          required>
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label fw-bold small">Break Start Time</label>
+                        <input type="time" name="breakStart" class="form-control" value="<%= settings.breakStart %>">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label fw-bold small">Break End Time</label>
+                        <input type="time" name="breakEnd" class="form-control" value="<%= settings.breakEnd %>">
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label fw-bold small">Booking Slot Interval (Minutes)</label>
+                        <select name="slotIntervalMinutes" class="form-select">
+                          <% [15, 20, 30, 45, 60].forEach(m=> { %>
+                            <option value="<%= m %>" <%=settings.slotIntervalMinutes===m ? 'selected' : '' %>><%= m %>
+                                minutes</option>
+                            <% }) %>
+                        </select>
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label fw-bold small">Max Concurrent Stations / Staff</label>
+                        <input type="number" name="maxConcurrentStaff" class="form-control" min="1" max="20"
+                          value="<%= settings.maxConcurrentStaff %>" required>
+                        <small class="text-muted">Simultaneous clients that can be served at the same time.</small>
+                      </div>
+
+                      <div class="col-12">
+                        <label class="form-label fw-bold small d-block">Working Days</label>
+                        <div class="d-flex flex-wrap gap-3">
+                          <% const days=[ { d: 1, label: 'Mon' }, { d: 2, label: 'Tue' }, { d: 3, label: 'Wed' }, { d:
+                            4, label: 'Thu' }, { d: 5, label: 'Fri' }, { d: 6, label: 'Sat' }, { d: 0, label: 'Sun' } ];
+                            %>
+                            <% days.forEach(day=> { %>
+                              <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="workingDays" value="<%= day.d %>"
+                                  id="day_<%= day.d %>" <%=settings.workingDays.includes(day.d) ? 'checked' : '' %>>
+                                <label class="form-check-label small fw-bold" for="day_<%= day.d %>">
+                                  <%= day.label %>
+                                </label>
+                              </div>
+                              <% }) %>
+                        </div>
+                      </div>
+
+                      <div class="col-12 mt-4">
+                        <button type="submit" class="btn-nail">💾 Save Schedule Settings</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div class="col-lg-5">
+                <div class="glass-card bg-white p-4">
+                  <h5 class="fw-bold mb-3">Salon Days Off & Holidays</h5>
+                  <p class="text-secondary small">Clients will not be allowed to book on dates added to this list.</p>
+
+                  <!-- Add Day Off Form -->
+                  <form method="post" action="/admin/daysoff/add" class="d-flex gap-2 mb-3">
+                    <input type="date" name="dayOffDate" class="form-control form-control-sm" required
+                      min="<%= today %>">
+                    <button type="submit" class="btn btn-sm btn-dark text-nowrap">+ Add Day Off</button>
+                  </form>
+
+                  <!-- Days Off List -->
+                  <ul class="list-group list-group-flush border rounded-3 overflow-hidden">
+                    <% if (!settings.daysOff || settings.daysOff.length===0) { %>
+                      <li class="list-group-item text-muted small text-center py-3">No custom days off scheduled.</li>
+                      <% } %>
+                        <% (settings.daysOff || []).sort().forEach(d=> { %>
+                          <li class="list-group-item d-flex justify-content-between align-items-center small">
+                            <span>🗓️ <strong>
+                                <%= d %>
+                              </strong></span>
+                            <form method="post" action="/admin/daysoff/remove" class="d-inline">
+                              <input type="hidden" name="dayOffDate" value="<%= d %>">
+                              <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">Remove</button>
+                            </form>
+                          </li>
+                          <% }) %>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
   </main>
 
   <!-- MODAL: ADD FINGERNAIL SERVICE -->
@@ -490,11 +723,13 @@
             </div>
             <div class="col-12">
               <label class="form-label small fw-bold">Description (English)</label>
-              <textarea name="description" class="form-control" rows="2" placeholder="Brief service details..."></textarea>
+              <textarea name="description" class="form-control" rows="2"
+                placeholder="Brief service details..."></textarea>
             </div>
             <div class="col-12">
               <label class="form-label small fw-bold">Description (Khmer)</label>
-              <textarea name="descriptionKm" class="form-control" rows="2" placeholder="ព័ត៌មានលម្អិតពីសេវាកម្មជាភាសាខ្មែរ..."></textarea>
+              <textarea name="descriptionKm" class="form-control" rows="2"
+                placeholder="ព័ត៌មានលម្អិតពីសេវាកម្មជាភាសាខ្មែរ..."></textarea>
             </div>
             <div class="col-12">
               <label class="form-label small fw-bold">Image URL (Optional)</label>
@@ -534,7 +769,8 @@
             </div>
             <div class="col-6">
               <label class="form-label small fw-bold">Duration (Minutes)</label>
-              <input type="number" id="editServiceDuration" name="durationMinutes" class="form-control" min="10" step="5" required>
+              <input type="number" id="editServiceDuration" name="durationMinutes" class="form-control" min="10"
+                step="5" required>
             </div>
             <div class="col-12">
               <label class="form-label small fw-bold">Description (English)</label>
@@ -570,7 +806,8 @@
           <div class="modal-body row g-3">
             <div class="col-12">
               <div class="alert alert-light border small mb-0">
-                Rescheduling for: <strong id="rescheduleCustomer"></strong> (<span id="rescheduleRef" class="text-primary font-monospace"></span>)
+                Rescheduling for: <strong id="rescheduleCustomer"></strong> (<span id="rescheduleRef"
+                  class="text-primary font-monospace"></span>)
               </div>
             </div>
             <div class="col-md-6">
@@ -607,7 +844,8 @@
           <div class="modal-body">
             <p class="text-dark mb-2">Are you sure you want to permanently delete this customer appointment?</p>
             <div class="alert alert-light border small mb-3">
-              <div class="mb-1"><strong>Reference:</strong> <span id="delBookingRef" class="text-primary font-monospace fw-bold"></span></div>
+              <div class="mb-1"><strong>Reference:</strong> <span id="delBookingRef"
+                  class="text-primary font-monospace fw-bold"></span></div>
               <div class="mb-1"><strong>Customer:</strong> <span id="delBookingCustomer" class="fw-bold"></span></div>
               <div class="mb-1"><strong>Service:</strong> <span id="delBookingService"></span></div>
               <div><strong>Appointment:</strong> <span id="delBookingSchedule"></span></div>
@@ -671,6 +909,506 @@
         document.getElementById('delBookingSchedule').innerText = `${button.getAttribute('data-date')} at ${button.getAttribute('data-time')}`;
       });
     }
+
+    // ========================================================
+    // BOOKING CALENDAR INTERACTIVE LOGIC
+    // ========================================================
+    (function () {
+      const serverToday = "<%= today %>"; // e.g. "2026-10-20"
+      const MONTH_NAMES = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function formatDayTitle(dateStr) {
+        if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const dateObj = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = dayNames[dateObj.getUTCDay()];
+        const monthName = MONTH_NAMES[m - 1];
+        return `${dayName}, ${d} ${monthName} ${y}`;
+      }
+
+      // State
+      let calYear = parseInt(serverToday.slice(0, 4), 10);
+      let calMonth = parseInt(serverToday.slice(5, 7), 10); // 1-12
+      let calSelectedDate = serverToday;
+      let calDaysCache = {};
+      let calInitialLoaded = false;
+
+      // DOM Elements
+      const calMonthPicker = document.getElementById('calMonthPicker');
+      const calMonthTitle = document.getElementById('calMonthTitle');
+      const calMonthTotalBadge = document.getElementById('calMonthTotalBadge');
+      const calMonthStatusBadges = document.getElementById('calMonthStatusBadges');
+      const calGrid = document.getElementById('calGrid');
+      const calPrevBtn = document.getElementById('calPrevBtn');
+      const calNextBtn = document.getElementById('calNextBtn');
+      const calTodayBtn = document.getElementById('calTodayBtn');
+      const calRefreshBtn = document.getElementById('calRefreshBtn');
+      const calDateType = document.getElementById('calDateType');
+      const calStatusFilter = document.getElementById('calStatusFilter');
+
+      const calRangeToggle = document.getElementById('calRangeToggle');
+      const calRangeInputsContainer = document.getElementById('calRangeInputsContainer');
+      const calRangeStart = document.getElementById('calRangeStart');
+      const calRangeEnd = document.getElementById('calRangeEnd');
+      const calRangeApplyBtn = document.getElementById('calRangeApplyBtn');
+      const calRangeHint = document.getElementById('calRangeHint');
+
+      const calSelectedDateHeader = document.getElementById('calSelectedDateHeader');
+      const calSelectedDateSubtext = document.getElementById('calSelectedDateSubtext');
+      const calSelectedCountBadge = document.getElementById('calSelectedCountBadge');
+      const calDetailLoading = document.getElementById('calDetailLoading');
+      const calDetailError = document.getElementById('calDetailError');
+      const calDetailRetryBtn = document.getElementById('calDetailRetryBtn');
+      const calDetailEmpty = document.getElementById('calDetailEmpty');
+      const calBookingsList = document.getElementById('calBookingsList');
+
+      function updateMonthPickerValue() {
+        if (calMonthPicker) {
+          const mStr = String(calMonth).padStart(2, '0');
+          calMonthPicker.value = `${calYear}-${mStr}`;
+        }
+      }
+
+      async function fetchCalendarSummary() {
+        if (!calGrid) return;
+        const monthStr = String(calMonth).padStart(2, '0');
+        if (calMonthTitle) calMonthTitle.innerText = `${MONTH_NAMES[calMonth - 1]} ${calYear}`;
+        if (calMonthTotalBadge) calMonthTotalBadge.innerText = 'Loading...';
+
+        const dateType = calDateType ? calDateType.value : 'appointment';
+        const statusVal = calStatusFilter ? calStatusFilter.value : '';
+
+        try {
+          const res = await fetch(`/admin/api/calendar?year=${calYear}&month=${calMonth}&dateType=${dateType}&status=${encodeURIComponent(statusVal)}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (!data.success) throw new Error(data.message || 'Error fetching calendar summary');
+
+          calDaysCache = data.days || {};
+          if (calMonthTotalBadge) {
+            calMonthTotalBadge.innerText = `${data.totalBookings || 0} Total in ${MONTH_NAMES[calMonth - 1]}`;
+          }
+
+          if (calMonthStatusBadges && data.statusCounts) {
+            calMonthStatusBadges.innerHTML = `
+              <span class="badge bg-warning text-dark" title="Pending">${data.statusCounts.pending || 0} P</span>
+              <span class="badge bg-success" title="Confirmed">${data.statusCounts.confirmed || 0} C</span>
+              <span class="badge bg-primary" title="Completed">${data.statusCounts.completed || 0} Done</span>
+            `;
+          }
+
+          renderGrid();
+        } catch (err) {
+          console.error('[Calendar Summary Error]', err);
+          if (calMonthTotalBadge) calMonthTotalBadge.innerText = 'Error loading';
+          renderGrid(); // render cells with what we have
+        }
+      }
+
+      function renderGrid() {
+        if (!calGrid) return;
+        calGrid.innerHTML = '';
+
+        // Calculate day 1 offset (0=Sun, 1=Mon, ..., 6=Sat)
+        const firstDayObj = new Date(Date.UTC(calYear, calMonth - 1, 1, 12, 0, 0));
+        const firstDayOfWeek = firstDayObj.getUTCDay();
+
+        // Days in current month
+        const daysInMonth = new Date(Date.UTC(calYear, calMonth, 0, 12, 0, 0)).getUTCDate();
+
+        // Days in previous month
+        const daysInPrevMonth = new Date(Date.UTC(calYear, calMonth - 1, 0, 12, 0, 0)).getUTCDate();
+
+        // 1. Previous month trailing days
+        for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+          const prevDay = daysInPrevMonth - i;
+          const prevMonthNum = calMonth === 1 ? 12 : calMonth - 1;
+          const prevYearNum = calMonth === 1 ? calYear - 1 : calYear;
+          const dStr = `${prevYearNum}-${String(prevMonthNum).padStart(2, '0')}-${String(prevDay).padStart(2, '0')}`;
+
+          const cell = createDayCell(dStr, prevDay, true);
+          calGrid.appendChild(cell);
+        }
+
+        // 2. Current month days
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dStr = `${calYear}-${String(calMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const cell = createDayCell(dStr, day, false);
+          calGrid.appendChild(cell);
+        }
+
+        // 3. Next month leading days (to complete grid to multiple of 7, up to 35 or 42 cells)
+        const totalRendered = firstDayOfWeek + daysInMonth;
+        const remaining = (totalRendered % 7 === 0) ? 0 : 7 - (totalRendered % 7);
+        for (let nextDay = 1; nextDay <= remaining; nextDay++) {
+          const nextMonthNum = calMonth === 12 ? 1 : calMonth + 1;
+          const nextYearNum = calMonth === 12 ? calYear + 1 : calYear;
+          const dStr = `${nextYearNum}-${String(nextMonthNum).padStart(2, '0')}-${String(nextDay).padStart(2, '0')}`;
+
+          const cell = createDayCell(dStr, nextDay, true);
+          calGrid.appendChild(cell);
+        }
+      }
+
+      function createDayCell(dateStr, dayNumber, isOutside) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day';
+        if (isOutside) cell.classList.add('is-outside');
+        if (dateStr === serverToday) cell.classList.add('is-today');
+        if (dateStr === calSelectedDate) cell.classList.add('is-selected');
+
+        const dayData = calDaysCache[dateStr] || null;
+        const total = dayData ? dayData.total : 0;
+
+        let badgesHtml = '';
+        if (total > 0) {
+          badgesHtml = `
+            <div class="cal-booking-badge">${total} booking${total > 1 ? 's' : ''}</div>
+            <div class="cal-status-row">
+              ${dayData.pending > 0 ? `<span class="cal-status-dot cal-dot-pending" title="${dayData.pending} Pending">🟡${dayData.pending}</span>` : ''}
+              ${dayData.confirmed > 0 ? `<span class="cal-status-dot cal-dot-confirmed" title="${dayData.confirmed} Confirmed">🟢${dayData.confirmed}</span>` : ''}
+              ${dayData.completed > 0 ? `<span class="cal-status-dot cal-dot-completed" title="${dayData.completed} Completed">🔵${dayData.completed}</span>` : ''}
+              ${dayData.cancelled > 0 ? `<span class="cal-status-dot cal-dot-cancelled" title="${dayData.cancelled} Cancelled">⚪${dayData.cancelled}</span>` : ''}
+              ${dayData.rejected > 0 ? `<span class="cal-status-dot cal-dot-rejected" title="${dayData.rejected} Rejected">🔴${dayData.rejected}</span>` : ''}
+            </div>
+          `;
+        } else {
+          badgesHtml = `<div class="text-muted small fst-italic" style="opacity: 0.35;">—</div>`;
+        }
+
+        cell.innerHTML = `
+          <div class="cal-day-header">
+            <span class="cal-day-num">${dayNumber}</span>
+            ${dateStr === serverToday ? '<span class="cal-today-tag">TODAY</span>' : ''}
+          </div>
+          <div>${badgesHtml}</div>
+        `;
+
+        cell.addEventListener('click', function () {
+          // Unselect previous
+          document.querySelectorAll('.calendar-day.is-selected').forEach(el => el.classList.remove('is-selected'));
+          cell.classList.add('is-selected');
+
+          calSelectedDate = dateStr;
+          fetchDateBookings(dateStr);
+        });
+
+        return cell;
+      }
+
+      async function fetchDateBookings(dateStart, dateEnd) {
+        if (!calBookingsList) return;
+
+        // Reset UI states
+        if (calDetailLoading) calDetailLoading.style.display = 'block';
+        if (calDetailError) calDetailError.style.display = 'none';
+        if (calDetailEmpty) calDetailEmpty.style.display = 'none';
+        calBookingsList.innerHTML = '';
+
+        const dateType = calDateType ? calDateType.value : 'appointment';
+        const statusVal = calStatusFilter ? calStatusFilter.value : '';
+
+        const isRange = dateEnd && dateEnd !== dateStart;
+        if (calSelectedDateHeader) {
+          calSelectedDateHeader.innerText = isRange
+            ? `📅 ${dateStart} to ${dateEnd}`
+            : `📅 ${formatDayTitle(dateStart)}`;
+        }
+        if (calSelectedDateSubtext) {
+          calSelectedDateSubtext.innerText = dateType === 'created'
+            ? 'Filtered by Record Created Date (Asia/Phnom_Penh)'
+            : 'Filtered by Appointment Date (Asia/Phnom_Penh)';
+        }
+
+        let url = `/admin/api/calendar/bookings?date=${dateStart}&dateType=${dateType}`;
+        if (isRange) url += `&dateEnd=${dateEnd}`;
+        if (statusVal) url += `&status=${encodeURIComponent(statusVal)}`;
+
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (!data.success) throw new Error(data.message || 'Failed to fetch bookings');
+
+          if (calDetailLoading) calDetailLoading.style.display = 'none';
+
+          if (calSelectedCountBadge) {
+            calSelectedCountBadge.innerText = `${data.count} Booking${data.count === 1 ? '' : 's'}`;
+          }
+
+          if (!data.bookings || data.bookings.length === 0) {
+            if (calDetailEmpty) calDetailEmpty.style.display = 'block';
+            return;
+          }
+
+          renderBookingsCards(data.bookings);
+        } catch (err) {
+          console.error('[Calendar Bookings Fetch Error]', err);
+          if (calDetailLoading) calDetailLoading.style.display = 'none';
+          if (calDetailError) calDetailError.style.display = 'block';
+        }
+      }
+
+      function renderBookingsCards(bookings) {
+        calBookingsList.innerHTML = '';
+
+        bookings.forEach(b => {
+          const card = document.createElement('div');
+          card.className = `cal-booking-card status-${b.status}`;
+
+          let actionButtons = '';
+          if (b.status === 'pending') {
+            actionButtons = `
+              <form method="post" action="/admin/bookings/${b.id}/status" class="d-inline">
+                <input type="hidden" name="status" value="confirmed">
+                <button type="submit" class="btn btn-sm btn-success px-2 py-1 me-1">✓ Confirm</button>
+              </form>
+              <form method="post" action="/admin/bookings/${b.id}/status" class="d-inline">
+                <input type="hidden" name="status" value="rejected">
+                <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1 me-1">✕ Reject</button>
+              </form>
+            `;
+          } else if (b.status === 'confirmed') {
+            actionButtons = `
+              <form method="post" action="/admin/bookings/${b.id}/status" class="d-inline">
+                <input type="hidden" name="status" value="completed">
+                <button type="submit" class="btn btn-sm btn-outline-primary px-2 py-1 me-1">Complete</button>
+              </form>
+              <form method="post" action="/admin/bookings/${b.id}/status" class="d-inline" onsubmit="return confirm('Cancel this appointment?');">
+                <input type="hidden" name="status" value="cancelled">
+                <button type="submit" class="btn btn-sm btn-outline-secondary px-2 py-1 me-1">Cancel</button>
+              </form>
+            `;
+          }
+
+          const rescheduleBtn = `
+            <button type="button" class="btn btn-sm btn-light border px-2 py-1 me-1"
+              data-bs-toggle="modal"
+              data-bs-target="#rescheduleModal"
+              data-id="${b.id}"
+              data-ref="${b.bookingReference}"
+              data-date="${b.date}"
+              data-time="${b.time}"
+              data-duration="${b.durationMinutes}"
+              data-name="${escapeHtml(b.customerName)}">
+              🗓️ Reschedule
+            </button>
+          `;
+
+          const deleteBtn = `
+            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteBookingModal"
+              data-id="${b.id}"
+              data-ref="${b.bookingReference}"
+              data-name="${escapeHtml(b.customerName)}"
+              data-service="${escapeHtml(b.service)}"
+              data-date="${b.date}"
+              data-time="${b.time}">
+              🗑️ Delete
+            </button>
+          `;
+
+          card.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <div>
+                <strong class="text-primary font-monospace fs-6">#${escapeHtml(b.bookingReference)}</strong>
+                <span class="badge-status badge-${b.status} ms-2">${b.status}</span>
+              </div>
+              <span class="badge bg-light text-secondary border small">${escapeHtml(b.source).toUpperCase()}</span>
+            </div>
+            
+            <div class="mb-1">
+              <span class="fw-bold text-dark fs-6">${escapeHtml(b.customerName)}</span>
+              <a href="tel:${escapeHtml(b.phone)}" class="text-decoration-none text-secondary ms-2 small">📞 ${escapeHtml(b.phone)}</a>
+              ${b.telegramId ? `<span class="badge bg-primary-subtle text-primary ms-1 small">✈️ ID: ${escapeHtml(b.telegramId)}</span>` : ''}
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center small mb-1">
+              <div>
+                <strong>💅 ${escapeHtml(b.service)}</strong>
+                ${b.serviceKm ? `<span class="text-muted ms-1">(${escapeHtml(b.serviceKm)})</span>` : ''}
+              </div>
+              <div class="text-danger fw-bold fs-6">$${b.price}</div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center small text-muted mb-2">
+              <div>
+                ⏰ <strong>${b.date} &bull; ${b.time} - ${b.endTime}</strong> (${b.durationMinutes}m)
+              </div>
+              ${b.createdDatePhnomPenh ? `<div class="fst-italic" style="font-size: 0.75rem;">Booked: ${b.createdDatePhnomPenh}</div>` : ''}
+            </div>
+
+            ${b.notes ? `<div class="small text-muted fst-italic mb-2 bg-light p-2 rounded">"${escapeHtml(b.notes)}"</div>` : ''}
+            ${b.adminNotes ? `<div class="small text-secondary mb-2 bg-warning-subtle p-2 rounded"><strong>Admin:</strong> ${escapeHtml(b.adminNotes)}</div>` : ''}
+
+            <div class="d-flex justify-content-end align-items-center gap-1 pt-1 border-top">
+              ${actionButtons}
+              ${rescheduleBtn}
+              ${deleteBtn}
+            </div>
+          `;
+
+          calBookingsList.appendChild(card);
+        });
+      }
+
+      function initEventListeners() {
+        if (calPrevBtn) {
+          calPrevBtn.addEventListener('click', function () {
+            if (calMonth === 1) {
+              calMonth = 12;
+              calYear -= 1;
+            } else {
+              calMonth -= 1;
+            }
+            updateMonthPickerValue();
+            fetchCalendarSummary();
+            // Default selected date to 1st of new month
+            calSelectedDate = `${calYear}-${String(calMonth).padStart(2, '0')}-01`;
+            fetchDateBookings(calSelectedDate);
+          });
+        }
+
+        if (calNextBtn) {
+          calNextBtn.addEventListener('click', function () {
+            if (calMonth === 12) {
+              calMonth = 1;
+              calYear += 1;
+            } else {
+              calMonth += 1;
+            }
+            updateMonthPickerValue();
+            fetchCalendarSummary();
+            // Default selected date to 1st of new month
+            calSelectedDate = `${calYear}-${String(calMonth).padStart(2, '0')}-01`;
+            fetchDateBookings(calSelectedDate);
+          });
+        }
+
+        if (calTodayBtn) {
+          calTodayBtn.addEventListener('click', function () {
+            calYear = parseInt(serverToday.slice(0, 4), 10);
+            calMonth = parseInt(serverToday.slice(5, 7), 10);
+            calSelectedDate = serverToday;
+            updateMonthPickerValue();
+            fetchCalendarSummary();
+            fetchDateBookings(serverToday);
+          });
+        }
+
+        if (calRefreshBtn) {
+          calRefreshBtn.addEventListener('click', function () {
+            fetchCalendarSummary();
+            fetchDateBookings(calSelectedDate);
+          });
+        }
+
+        if (calMonthPicker) {
+          calMonthPicker.addEventListener('change', function () {
+            if (this.value && /^\d{4}-\d{2}$/.test(this.value)) {
+              const [y, m] = this.value.split('-').map(Number);
+              calYear = y;
+              calMonth = m;
+              fetchCalendarSummary();
+              calSelectedDate = `${calYear}-${String(calMonth).padStart(2, '0')}-01`;
+              fetchDateBookings(calSelectedDate);
+            }
+          });
+        }
+
+        if (calDateType) {
+          calDateType.addEventListener('change', function () {
+            fetchCalendarSummary();
+            fetchDateBookings(calSelectedDate);
+          });
+        }
+
+        if (calStatusFilter) {
+          calStatusFilter.addEventListener('change', function () {
+            fetchCalendarSummary();
+            fetchDateBookings(calSelectedDate);
+          });
+        }
+
+        if (calRangeToggle) {
+          calRangeToggle.addEventListener('change', function () {
+            if (calRangeInputsContainer) {
+              if (this.checked) {
+                calRangeInputsContainer.style.removeProperty('display');
+                if (calRangeHint) calRangeHint.innerText = 'Enter start & end date to view bookings in that date range.';
+                if (calRangeStart && !calRangeStart.value) calRangeStart.value = calSelectedDate;
+                if (calRangeEnd && !calRangeEnd.value) calRangeEnd.value = calSelectedDate;
+              } else {
+                calRangeInputsContainer.style.setProperty('display', 'none', 'important');
+                if (calRangeHint) calRangeHint.innerText = 'Click any day on calendar to view that day\'s bookings.';
+                fetchDateBookings(calSelectedDate);
+              }
+            }
+          });
+        }
+
+        if (calRangeApplyBtn) {
+          calRangeApplyBtn.addEventListener('click', function () {
+            const start = (calRangeStart?.value || '').trim();
+            const end = (calRangeEnd?.value || '').trim();
+            if (!start) {
+              alert('Please select a start date.');
+              return;
+            }
+            if (end && end < start) {
+              alert('End date must be greater than or equal to start date.');
+              return;
+            }
+            fetchDateBookings(start, end || start);
+          });
+        }
+
+        if (calDetailRetryBtn) {
+          calDetailRetryBtn.addEventListener('click', function () {
+            fetchDateBookings(calSelectedDate);
+          });
+        }
+
+        // Tab activation trigger
+        const calendarTabBtn = document.getElementById('calendar-tab');
+        if (calendarTabBtn) {
+          calendarTabBtn.addEventListener('shown.bs.tab', function () {
+            if (!calInitialLoaded) {
+              calInitialLoaded = true;
+              updateMonthPickerValue();
+              fetchCalendarSummary();
+              fetchDateBookings(calSelectedDate);
+            }
+          });
+        }
+      }
+
+      // Check if calendar tab is active on load
+      const isCalendarActiveOnLoad = "<%= activeTab === 'calendar' ? 'true' : 'false' %>";
+      initEventListeners();
+      if (isCalendarActiveOnLoad) {
+        calInitialLoaded = true;
+        updateMonthPickerValue();
+        fetchCalendarSummary();
+        fetchDateBookings(calSelectedDate);
+      }
+    })();
   </script>
 </body>
+
 </html>

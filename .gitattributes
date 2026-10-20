@@ -1,0 +1,31 @@
+# Git line-ending normalization for Mini Room Nail & Eyelash
+# Ensures consistent LF line endings in the repository regardless of OS
+
+* text=auto eol=lf
+
+# Force binary (no conversion) for images and binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.gif binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+
+# Source files — always normalize to LF
+*.js text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.ejs text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.env text eol=lf
+*.example text eol=lf
+*.sql text eol=lf
+*.sh text eol=lf

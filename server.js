@@ -16,7 +16,9 @@ const {
   getLocalToday,
   getLocalCurrentTime,
   getAvailableSlots,
-  checkSlotAvailability
+  checkSlotAvailability,
+  getPhnomPenhDateString,
+  getPhnomPenhDateRangeForUTC
 } = require('./utils/scheduler');
 const { previewExpiredBookings, executeExpiredBookingsCleanup } = require('./utils/retention');
 const { supabase } = require('./config/supabase');
@@ -636,6 +638,199 @@ app.post('/admin/bookings/:id/delete', adminAuth, async (req, res) => {
   }
 });
 
+// ==========================================
+// ADMIN CALENDAR API ENDPOINTS (Protected)
+// ==========================================
+
+// GET /admin/api/calendar?year=YYYY&month=MM or ?month=YYYY-MM [&status=xxx][&dateType=appointment|created]
+// Returns booking counts per day for the given month, respecting timezone Asia/Phnom_Penh
+app.get('/admin/api/calendar', adminAuth, async (req, res) => {
+  try {
+    const todayPhnomPenh = getLocalToday(DEFAULT_TIMEZONE);
+    let year = req.query.year ? parseInt(req.query.year, 10) : null;
+    let month = req.query.month ? parseInt(req.query.month, 10) : null;
+
+    if (req.query.month && typeof req.query.month === 'string') {
+      const trimmedMonth = req.query.month.trim();
+      if (/^\d{4}-\d{2}$/.test(trimmedMonth)) {
+        const parts = trimmedMonth.split('-');
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10);
+      } else if (isNaN(month) || month < 1 || month > 12) {
+        return res.status(400).json({ success: false, message: 'Invalid month format. Expected YYYY-MM or integer 1-12.' });
+      }
+    }
+
+    if (year === null) year = parseInt(todayPhnomPenh.slice(0, 4), 10);
+    if (month === null) month = parseInt(todayPhnomPenh.slice(5, 7), 10);
+
+    if (isNaN(year) || year < 2000 || year > 2100) {
+      return res.status(400).json({ success: false, message: 'Invalid year parameter (expected 2000-2100).' });
+    }
+    if (isNaN(month) || month < 1 || month > 12) {
+      return res.status(400).json({ success: false, message: 'Invalid month parameter (expected 1-12).' });
+    }
+
+    const monthStr = String(month).padStart(2, '0');
+    const firstDay = `${year}-${monthStr}-01`;
+    const lastDayDate = new Date(Date.UTC(year, month, 0)); // day 0 of next month = last day of this month
+    const lastDay = `${year}-${monthStr}-${String(lastDayDate.getUTCDate()).padStart(2, '0')}`;
+
+    const dateType = req.query.dateType === 'created' ? 'created' : 'appointment';
+    const statusFilter = (req.query.status || '').trim();
+    const ALLOWED_STATUSES = ['pending', 'confirmed', 'rejected', 'cancelled', 'completed'];
+
+    if (statusFilter && !ALLOWED_STATUSES.includes(statusFilter)) {
+      return res.status(400).json({ success: false, message: 'Invalid status filter parameter.' });
+    }
+
+    let query = supabase.from('bookings').select('date, status, created_at');
+
+    if (dateType === 'created') {
+      const { startUtc, endUtc } = getPhnomPenhDateRangeForUTC(firstDay, lastDay);
+      query = query.gte('created_at', startUtc).lte('created_at', endUtc);
+    } else {
+      query = query.gte('date', firstDay).lte('date', lastDay);
+    }
+
+    if (statusFilter) {
+      query = query.eq('status', statusFilter);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('[Calendar API] Supabase error:', error.message);
+      return res.status(500).json({ success: false, message: 'Database error fetching calendar data.' });
+    }
+
+    // Build day map & status totals
+    const dayMap = {};
+    const statusCounts = { pending: 0, confirmed: 0, rejected: 0, cancelled: 0, completed: 0 };
+    let totalCount = 0;
+
+    for (const row of (data || [])) {
+      const d = dateType === 'created'
+        ? getPhnomPenhDateString(row.created_at)
+        : row.date;
+
+      if (!d) continue;
+
+      if (!dayMap[d]) {
+        dayMap[d] = { total: 0 };
+        for (const s of ALLOWED_STATUSES) dayMap[d][s] = 0;
+      }
+
+      dayMap[d].total += 1;
+      totalCount += 1;
+
+      if (ALLOWED_STATUSES.includes(row.status)) {
+        dayMap[d][row.status] += 1;
+        statusCounts[row.status] += 1;
+      }
+    }
+
+    res.json({
+      success: true,
+      year,
+      month,
+      firstDay,
+      lastDay,
+      dateType,
+      statusFilter: statusFilter || 'all',
+      timeZone: DEFAULT_TIMEZONE,
+      totalBookings: totalCount,
+      statusCounts,
+      days: dayMap
+    });
+  } catch (err) {
+    console.error('[Calendar API] Unexpected error:', err.message);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+});
+
+// GET /admin/api/calendar/bookings?date=YYYY-MM-DD[&dateEnd=YYYY-MM-DD][&status=xxx][&dateType=appointment|created]
+// Returns full booking details for a selected date or date range
+app.get('/admin/api/calendar/bookings', adminAuth, async (req, res) => {
+  try {
+    const dateStart = (req.query.date || '').trim();
+    const dateEnd = (req.query.dateEnd || '').trim();
+    const dateType = req.query.dateType === 'created' ? 'created' : 'appointment';
+    const statusFilter = (req.query.status || '').trim();
+    const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (!dateStart || !ISO_DATE.test(dateStart)) {
+      return res.status(400).json({ success: false, message: 'Missing or invalid date parameter (YYYY-MM-DD).' });
+    }
+    if (dateEnd && !ISO_DATE.test(dateEnd)) {
+      return res.status(400).json({ success: false, message: 'Invalid dateEnd parameter (YYYY-MM-DD).' });
+    }
+    if (dateEnd && dateEnd < dateStart) {
+      return res.status(400).json({ success: false, message: 'dateEnd must be >= date (start).' });
+    }
+
+    const ALLOWED_STATUSES = ['pending', 'confirmed', 'rejected', 'cancelled', 'completed'];
+    if (statusFilter && !ALLOWED_STATUSES.includes(statusFilter)) {
+      return res.status(400).json({ success: false, message: 'Invalid status filter.' });
+    }
+
+    const filter = {};
+    if (statusFilter) filter.status = statusFilter;
+
+    let sortObj = { date: 1, time: 1 };
+
+    if (dateType === 'created') {
+      const { startUtc, endUtc } = getPhnomPenhDateRangeForUTC(dateStart, dateEnd || dateStart);
+      filter.createdAt = { $gte: startUtc, $lte: endUtc };
+      sortObj = { createdAt: -1 };
+    } else {
+      if (dateEnd && dateEnd !== dateStart) {
+        filter.date = { $gte: dateStart, $lte: dateEnd };
+      } else {
+        filter.date = dateStart;
+      }
+    }
+
+    const bookings = await Booking.find(filter)
+      .sort(sortObj)
+      .lean();
+
+    res.json({
+      success: true,
+      date: dateStart,
+      dateEnd: dateEnd || dateStart,
+      dateType,
+      status: statusFilter || null,
+      timeZone: DEFAULT_TIMEZONE,
+      count: bookings.length,
+      bookings: bookings.map(b => ({
+        id: b.id,
+        _id: b.id,
+        bookingReference: b.bookingReference,
+        customerName: b.customerName,
+        phone: b.phone,
+        service: b.service,
+        serviceKm: b.serviceKm || '',
+        price: Number(b.price || 0),
+        date: b.date,
+        time: b.time,
+        endTime: b.endTime,
+        durationMinutes: Number(b.durationMinutes || 45),
+        status: b.status,
+        notes: b.notes || '',
+        adminNotes: b.adminNotes || '',
+        source: b.source,
+        language: b.language || 'en',
+        telegramId: b.telegramId || '',
+        createdAt: b.createdAt,
+        createdDatePhnomPenh: getPhnomPenhDateString(b.createdAt)
+      }))
+    });
+  } catch (err) {
+    console.error('[Calendar Bookings API] Unexpected error:', err.message);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+});
+
 // Dry-run preview of 3-month retention cleanup (Admin Only)
 app.get('/admin/retention/dry-run', adminAuth, async (req, res) => {
   try {
@@ -825,8 +1020,8 @@ function validateEnvironment() {
     console.log('[Configuration Notice] TELEGRAM_BOT_TOKEN is not configured. Telegram bot features will be disabled while the web application runs normally.');
   }
 
-  if (isProd && (!process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD === 'admin123')) {
-    console.warn('[Security Warning] ADMIN_PASSWORD is set to default in production! Please set a strong ADMIN_PASSWORD in your Render environment variables.');
+  if (isProd && (!process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD === 'admin123' || (process.env.ADMIN_PASSWORD || '').length < 8)) {
+    console.warn('[Security Warning] ADMIN_PASSWORD is weak or using a default/short value in production! Please set a strong ADMIN_PASSWORD (at least 8 characters) in your Render environment variables.');
   }
 }
 
