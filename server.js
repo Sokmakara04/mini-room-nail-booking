@@ -52,7 +52,7 @@ function getLang(req) {
 const adminAuth = basicAuth({
   authorizer: (username, password) => {
     const expectedUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
-    const expectedPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
+    const expectedPassword = (process.env.ADMIN_PASSWORD || 'Ramon11@').trim();
     const userMatches = basicAuth.safeCompare(username, expectedUsername);
     const passMatches = basicAuth.safeCompare(password, expectedPassword);
     return userMatches && passMatches;
@@ -151,7 +151,7 @@ async function notifyAdminTelegram(booking) {
       channel: 'telegram',
       message: msgText,
       status: 'sent'
-    }).catch(() => {});
+    }).catch(() => { });
   } catch (err) {
     console.error('Failed to send admin Telegram alert:', err.message);
   }
@@ -179,7 +179,7 @@ async function sendCustomerStatusTelegram(booking) {
       channel: 'telegram',
       message: messageText,
       status: 'sent'
-    }).catch(() => {});
+    }).catch(() => { });
   } catch (err) {
     console.error('Failed to notify customer on Telegram:', err.message);
   }
