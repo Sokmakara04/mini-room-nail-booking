@@ -23,6 +23,9 @@
         <a class="nav-link d-none d-md-inline" href="/services">
           <%= lang==='km' ? 'សេវាកម្មក្រចក' : 'Nail Services' %>
         </a>
+        <a class="nav-link d-none d-md-inline" href="#location">
+          <%= lang==='km' ? 'ទីតាំងហាង' : 'Our Location' %>
+        </a>
         <a class="nav-link d-none d-md-inline" href="/status">
           <%= lang==='km' ? 'ពិនិត្យការកក់' : 'Check Status' %>
         </a>
@@ -217,6 +220,78 @@
     </div>
   </section>
 
+  <!-- Our Location Section -->
+  <section id="location" class="py-5" style="background: linear-gradient(180deg, #f4eaec 0%, #faf6f5 100%);">
+    <div class="container">
+      <div class="glass-card p-4 p-md-5 border-0 shadow-sm" style="background: #ffffff; border-radius: 1.5rem;">
+        <div class="row align-items-center g-4">
+          <div class="col-lg-7">
+            <span class="hero-eyebrow text-uppercase" style="letter-spacing: 0.1em;">
+              📍 <%= lang === 'km' ? 'ទីតាំងហាង' : 'OUR LOCATION' %>
+            </span>
+            <h2 class="fw-bold mt-2 mb-3" style="color: var(--plum);">
+              <%= lang === 'km' ? 'ទីតាំងហាង និងផ្លូវធ្វើដំណើរ' : 'Our Studio Location' %>
+            </h2>
+            <p class="text-secondary mb-4" style="font-size: 1.05rem; line-height: 1.7;">
+              <% if (lang === 'km') { %>
+                សូមស្វាគមន៍មកកាន់ <strong><%= salonName %></strong>! បងអាចស្វែងរកទីតាំង និងមើលផ្លូវធ្វើដំណើរមកកាន់ហាងយើងខ្ញុំយ៉ាងងាយស្រួលនៅលើ Google Maps ដោយចុចប៊ូតុងខាងក្រោម។
+              <% } else { %>
+                Welcome to <strong><%= salonName %></strong>! Easily find our salon and get turn-by-turn directions on Google Maps by clicking the button below.
+              <% } %>
+            </p>
+
+            <div class="d-flex flex-wrap gap-3 mb-4">
+              <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" 
+                 target="_blank" 
+                 rel="noopener noreferrer" 
+                 class="btn-nail btn-lg d-inline-flex align-items-center gap-2 text-decoration-none shadow-sm"
+                 id="getDirectionsBtn">
+                <span>🗺️</span>
+                <span><%= lang === 'km' ? 'មើលផ្លូវទៅហាង' : 'Get Directions' %></span>
+                <span class="small opacity-75">↗</span>
+              </a>
+            </div>
+
+            <div class="pt-3 border-top d-flex flex-wrap gap-4 text-secondary small">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fs-6">⏰</span>
+                <span><%= settings.openingTime %> - <%= settings.closingTime %> (<%= lang === 'km' ? 'រៀងរាល់ថ្ងៃ' : 'Mon - Sun' %>)</span>
+              </div>
+              <% if (settings.salonPhone) { %>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fs-6">📞</span>
+                  <a href="tel:<%= settings.salonPhone %>" class="text-decoration-none text-secondary">
+                    <%= settings.salonPhone %>
+                  </a>
+                </div>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="col-lg-5 text-center">
+            <div class="p-4 rounded-4" style="background: linear-gradient(135deg, #fbeff2 0%, #f7e2e7 100%); border: 1px solid var(--border);">
+              <div class="display-4 mb-2">📍</div>
+              <h5 class="fw-bold mb-2" style="color: var(--plum);">
+                <%= salonName %>
+              </h5>
+              <p class="text-muted small mb-3">
+                <%= lang === 'km' ? 'មើលទីតាំងផ្ទាល់នៅលើ Google Maps' : 'Open directly in Google Maps' %>
+              </p>
+              <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" 
+                 target="_blank" 
+                 rel="noopener noreferrer" 
+                 class="btn-outline-nail w-100 py-2 d-inline-flex align-items-center justify-content-center gap-2">
+                <span>📍</span>
+                <span><%= lang === 'km' ? 'មើលផ្លូវទៅហាង' : 'Get Directions' %></span>
+                <span class="small">↗</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Telegram Bot Integration Banner -->
   <section class="py-5">
     <div class="container">
@@ -249,6 +324,7 @@
       </p>
       <p class="small text-secondary mb-0">© <%= new Date().getFullYear() %>
           <%= salonName %>. <%= lang==='km' ? 'រក្សាសិទ្ធិគ្រប់យ៉ាង' : 'All rights reserved.' %>
+          • <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary">📍 <%= lang === 'km' ? 'ទីតាំងហាង (Google Maps)' : 'Our Location (Google Maps)' %></a>
       </p>
     </div>
   </footer>

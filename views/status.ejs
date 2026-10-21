@@ -19,6 +19,7 @@
       <div class="d-flex align-items-center gap-3">
         <a class="nav-link" href="/"><%= lang === 'km' ? 'ទំព័រដើម' : 'Home' %></a>
         <a class="nav-link" href="/services"><%= lang === 'km' ? 'សេវាកម្ម' : 'Services' %></a>
+        <a class="nav-link d-none d-md-inline" href="/#location"><%= lang === 'km' ? 'ទីតាំងហាង' : 'Our Location' %></a>
         <a class="nav-link active" href="/status"><%= lang === 'km' ? 'ពិនិត្យការកក់' : 'Check Status' %></a>
         
         <div class="lang-switch">
@@ -106,6 +107,13 @@
                         <span class="text-warning-emphasis"><%= lang === 'km' ? 'ហាងកំពុងពិនិត្យសំណើរបស់អ្នក។ អ្នកនឹងទទួលបានការជូនដំណឹងនៅពេលហាងបានបញ្ជាក់។' : 'Your appointment is awaiting salon confirmation.' %></span>
                       <% } else if (b.status === 'confirmed') { %>
                         <span class="text-success"><%= lang === 'km' ? 'ការកក់បានជោគជ័យ! សូមអញ្ជើញមកដល់មុនម៉ោង 5-10 នាទី។' : 'Appointment confirmed! Please arrive 5-10 minutes early.' %></span>
+                        <div class="mt-2">
+                          <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 py-1 px-2">
+                            <span>🗺️</span>
+                            <span><%= lang === 'km' ? 'មើលផ្លូវទៅហាង' : 'Get Directions' %></span>
+                            <span class="small">↗</span>
+                          </a>
+                        </div>
                       <% } else if (b.status === 'rejected') { %>
                         <span class="text-danger"><%= lang === 'km' ? 'ហាងមិនអាចទទួលម៉ោងនេះបានទេ។ សូមកក់ម៉ោងផ្សេង ឬទាក់ទងមកកាន់ហាង។' : 'The salon could not accept this slot. Please pick another time.' %></span>
                       <% } else { %>
@@ -125,7 +133,10 @@
   <footer>
     <div class="container text-center">
       <p class="mb-1"><strong><%= salonName %></strong></p>
-      <p class="small text-secondary mb-0">© <%= new Date().getFullYear() %> <%= salonName %>. <%= lang === 'km' ? 'រក្សាសិទ្ធិគ្រប់យ៉ាង' : 'All rights reserved.' %></p>
+      <p class="small text-secondary mb-0">
+        © <%= new Date().getFullYear() %> <%= salonName %>. <%= lang === 'km' ? 'រក្សាសិទ្ធិគ្រប់យ៉ាង' : 'All rights reserved.' %>
+        • <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary">📍 <%= lang === 'km' ? 'ទីតាំងហាង (Google Maps)' : 'Our Location (Google Maps)' %></a>
+      </p>
     </div>
   </footer>
 </body>

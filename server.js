@@ -175,7 +175,15 @@ async function sendCustomerStatusTelegram(booking) {
   else return;
 
   try {
-    await sendTelegramMessage(booking.telegramId, messageText, { parse_mode: 'Markdown' });
+    const sendOptions = { parse_mode: 'Markdown' };
+    if (booking.status === 'confirmed') {
+      sendOptions.reply_markup = {
+        inline_keyboard: [
+          [{ text: '🗺️ Get Directions / មើលផ្លូវទៅហាង', url: 'https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it' }]
+        ]
+      };
+    }
+    await sendTelegramMessage(booking.telegramId, messageText, sendOptions);
     Notification.log({
       bookingId: booking._id || booking.id,
       recipient: booking.telegramId,

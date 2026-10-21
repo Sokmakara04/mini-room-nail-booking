@@ -205,6 +205,9 @@ function getMainMenuKeyboard(lang = 'en') {
         { text: t.myBookings, callback_data: `menu:status:${lang}` }
       ],
       [
+        { text: t.locationBtn || (lang === 'km' ? '📍 ទីតាំងហាង' : '📍 Our Location / ទីតាំងហាង'), callback_data: `menu:location:${lang}` }
+      ],
+      [
         { text: t.changeLang, callback_data: 'menu:lang' },
         { text: t.helpBtn, callback_data: `menu:help:${lang}` }
       ]
@@ -349,6 +352,18 @@ async function handleUpdate(update, env) {
             ]
           }
         });
+        return;
+      }
+
+      if (action === 'location') {
+        const locText = t.locationInfo(salonName);
+        const locKeyboard = {
+          inline_keyboard: [
+            [{ text: t.getDirectionsBtn || (lang === 'km' ? '🗺️ មើលផ្លូវទៅហាង' : '🗺️ Get Directions'), url: 'https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it' }],
+            [{ text: lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu', callback_data: `lang:${lang}` }]
+          ]
+        };
+        await editMessageText(token, chatId, messageId, locText, { reply_markup: locKeyboard });
         return;
       }
 
@@ -643,7 +658,12 @@ async function handleUpdate(update, env) {
 
       // Notify customer if they booked via Telegram
       if (updated.telegramId) {
-        await sendMessage(token, updated.telegramId, custMsg);
+        const replyMarkup = targetStatus === 'confirmed' ? {
+          inline_keyboard: [
+            [{ text: '🗺️ Get Directions / មើលផ្លូវទៅហាង', url: 'https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it' }]
+          ]
+        } : undefined;
+        await sendMessage(token, updated.telegramId, custMsg, { reply_markup: replyMarkup });
         await logNotification(supabase, {
           bookingId: updated.id,
           recipient: updated.telegramId,
@@ -760,7 +780,8 @@ async function handleUpdate(update, env) {
         const groupHelp = `👥 **Admin Group Commands:**\n\n` +
           `• \`/myid\` or \`/chatid\` - View this group's Chat ID for configuration\n` +
           `• \`/status <REF>\` - Look up an appointment by reference (e.g. \`/status NL-123456\`)\n` +
-          `• \`/services\` - View active fingernail services and pricing\n\n` +
+          `• \`/services\` - View active fingernail services and pricing\n` +
+          `• \`/location\` - View Google Maps location link\n\n` +
           `ℹ️ *New appointment alerts with Confirm / Reject buttons appear automatically in this group.*`;
         await sendMessage(token, chatId, groupHelp);
         return;
@@ -785,7 +806,26 @@ async function handleUpdate(update, env) {
       return;
     }
 
-    // 2.7 Handle /status Command
+    // 2.7 Handle /location, /map, /directions Command
+    if (command === 'location' || command === 'map' || command === 'directions') {
+      const bilingualText = `📍 **${salonName}**\n\n` +
+        `🇰🇭 **ទីតាំងហាង៖**\nសូមស្វាគមន៍មកកាន់ហាងយើងខ្ញុំ! បងអាចចុចតំណភ្ជាប់ខាងក្រោមដើម្បីមើលទីតាំង ឬផ្លូវធ្វើដំណើរនៅលើ Google Maps:\n` +
+        `🗺️ [មើលផ្លូវទៅហាងនៅលើ Google Maps](https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it)\n\n` +
+        `🇬🇧 **Location & Directions:**\nWelcome to our salon! Tap the link below to get directions or view our location on Google Maps:\n` +
+        `🗺️ [Get Directions on Google Maps](https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it)\n\n` +
+        `📍 \`https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it\``;
+
+      const replyMarkup = {
+        inline_keyboard: [
+          [{ text: '🗺️ Get Directions / មើលផ្លូវទៅហាង', url: 'https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it' }],
+          ...(isGroup ? [] : [[{ text: '🏠 Main Menu / ម៉ឺនុយមេ', callback_data: 'lang:km' }]])
+        ]
+      };
+      await sendMessage(token, chatId, bilingualText, { reply_markup: replyMarkup });
+      return;
+    }
+
+    // 2.8 Handle /status Command
     if (command === 'status') {
       const searchTarget = commandArg || (isGroup ? '' : chatId);
       if (!searchTarget) {

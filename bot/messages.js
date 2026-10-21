@@ -6,6 +6,12 @@ const messages = {
     book: '📅 កក់សេវាកម្មក្រចកដៃ',
     services: '💅 សេវាកម្មក្រចកដៃ និងតម្លៃ',
     myBookings: '🔍 ពិនិត្យស្ថានភាពការកក់',
+    locationBtn: '📍 ទីតាំងហាង',
+    getDirectionsBtn: '🗺️ មើលផ្លូវទៅហាង (Google Maps)',
+    locationInfo: name => `📍 **ទីតាំងហាង ${name}**\n\n` +
+      `សូមស្វាគមន៍មកកាន់ហាងយើងខ្ញុំ! បងអាចចុចតំណភ្ជាប់ខាងក្រោមដើម្បីមើលទីតាំង ឬផ្លូវធ្វើដំណើរនៅលើ Google Maps:\n\n` +
+      `🗺️ [មើលផ្លូវទៅហាងនៅលើ Google Maps](https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it)\n\n` +
+      `📍 \`https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it\``,
     changeLang: '🌐 ភាសា / Language',
     helpBtn: 'ℹ️ ជំនួយ',
     chooseService: '💅 សូមជ្រើសរើសសេវាកម្មក្រចកដៃដែលបងពេញចិត្ត៖',
@@ -56,7 +62,8 @@ const messages = {
       `💅 សេវាកម្ម៖ ${b.serviceKm || b.service}\n` +
       `📅 ថ្ងៃ៖ ${b.date}\n` +
       `⏰ ម៉ោង៖ ${b.time} ដល់ ${b.endTime}\n\n` +
-      `សូមអញ្ជើញមកដល់មុនម៉ោង 5-10 នាទី។ ហាងយើងខ្ញុំរីករាយស្វាគមន៍បង! 💅✨`,
+      `សូមអញ្ជើញមកដល់មុនម៉ោង 5-10 នាទី។ ហាងយើងខ្ញុំរីករាយស្វាគមន៍បង! 💅✨\n\n` +
+      `📍 **ទីតាំងហាង (Google Maps)៖**\nhttps://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it`,
     statusRejected: b => `❌ **សុំទោស ការកក់ត្រូវបានបដិសេធ**\n\n` +
       `🔖 លេខកូដ៖ \`${b.bookingReference}\`\n` +
       `💅 សេវាកម្ម៖ ${b.serviceKm || b.service}\n` +
@@ -69,6 +76,7 @@ const messages = {
       '• /start - បើកផ្ទាំងម៉ឺនុយមេ\n' +
       '• /book - ចាប់ផ្ដើមកក់សេវាកម្មក្រចកដៃ\n' +
       '• /services - មើលតារាងសេវាកម្ម និងតម្លៃ\n' +
+      '• /location - មើលទីតាំងហាងនៅលើ Google Maps\n' +
       '• /status - ពិនិត្យស្ថានភាពការកក់តាមលេខកូដ\n' +
       '• /language - ផ្លាស់ប្ដូរភាសា (ខ្មែរ / English)\n' +
       '• /cancel - បោះបង់ការកក់កំពុងធ្វើ\n' +
@@ -82,6 +90,12 @@ const messages = {
     book: '📅 Book Nail Appointment',
     services: '💅 Nail Services & Prices',
     myBookings: '🔍 Check Booking Status',
+    locationBtn: '📍 Our Location / ទីតាំងហាង',
+    getDirectionsBtn: '🗺️ Get Directions (Google Maps)',
+    locationInfo: name => `📍 **${name} Location**\n\n` +
+      `Welcome to our salon! Tap the link below to get directions or view our location on Google Maps:\n\n` +
+      `🗺️ [Get Directions on Google Maps](https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it)\n\n` +
+      `📍 \`https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it\``,
     changeLang: '🌐 Language / ភាសា',
     helpBtn: 'ℹ️ Help',
     chooseService: '💅 Please choose your desired fingernail service:',
@@ -132,7 +146,8 @@ const messages = {
       `💅 Service: ${b.service}\n` +
       `📅 Date: ${b.date}\n` +
       `⏰ Time: ${b.time} to ${b.endTime}\n\n` +
-      `Please arrive 5-10 minutes early. We look forward to pampering your nails! 💅✨`,
+      `Please arrive 5-10 minutes early. We look forward to pampering your nails! 💅✨\n\n` +
+      `📍 **Location & Directions (Google Maps):**\nhttps://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it`,
     statusRejected: b => `❌ **Appointment Request Declined**\n\n` +
       `🔖 Reference: \`${b.bookingReference}\`\n` +
       `💅 Service: ${b.service}\n` +
@@ -145,6 +160,7 @@ const messages = {
       '• /start - Main menu & language selection\n' +
       '• /book - Book a fingernail appointment\n' +
       '• /services - View nail services & price list\n' +
+      '• /location - View salon location & directions on Google Maps\n' +
       '• /status - Check booking status by reference code\n' +
       '• /language - Change language (English / ខ្មែរ)\n' +
       '• /cancel - Cancel current booking flow\n' +

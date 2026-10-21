@@ -19,6 +19,7 @@
       <div class="d-flex align-items-center gap-3">
         <a class="nav-link" href="/"><%= lang === 'km' ? 'ទំព័រដើម' : 'Home' %></a>
         <a class="nav-link" href="/services"><%= lang === 'km' ? 'សេវាកម្ម' : 'Services' %></a>
+        <a class="nav-link d-none d-md-inline" href="/#location"><%= lang === 'km' ? 'ទីតាំងហាង' : 'Our Location' %></a>
         <a class="nav-link" href="/status"><%= lang === 'km' ? 'ពិនិត្យការកក់' : 'Check Status' %></a>
         
         <div class="lang-switch">
@@ -93,6 +94,17 @@
               </a>
             </div>
 
+            <div class="mt-4 pt-3 border-top text-center">
+              <p class="text-secondary small mb-2">
+                📍 <%= lang === 'km' ? 'ស្វែងរកទីតាំងហាង ឬមើលផ្លូវធ្វើដំណើរមកកាន់យើងខ្ញុំ៖' : 'Need directions or want to find our location?' %>
+              </p>
+              <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-2 px-3 py-2">
+                <span>🗺️</span>
+                <span><%= lang === 'km' ? 'មើលផ្លូវទៅហាង (Google Maps)' : 'Get Directions (Google Maps)' %></span>
+                <span class="small">↗</span>
+              </a>
+            </div>
+
           <% } else { %>
             <div class="display-3 mb-3">⚠️</div>
             <h1 class="fw-bold text-danger mb-2">
@@ -116,7 +128,10 @@
   <footer>
     <div class="container text-center">
       <p class="mb-1"><strong><%= salonName %></strong></p>
-      <p class="small text-secondary mb-0">© <%= new Date().getFullYear() %> <%= salonName %>. <%= lang === 'km' ? 'រក្សាសិទ្ធិគ្រប់យ៉ាង' : 'All rights reserved.' %></p>
+      <p class="small text-secondary mb-0">
+        © <%= new Date().getFullYear() %> <%= salonName %>. <%= lang === 'km' ? 'រក្សាសិទ្ធិគ្រប់យ៉ាង' : 'All rights reserved.' %>
+        • <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary">📍 <%= lang === 'km' ? 'ទីតាំងហាង (Google Maps)' : 'Our Location (Google Maps)' %></a>
+      </p>
     </div>
   </footer>
 </body>
