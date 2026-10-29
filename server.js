@@ -1,7 +1,9 @@
 require('dotenv').config();
 const path = require('path');
+const crypto = require('crypto');
 const express = require('express');
 const basicAuth = require('express-basic-auth');
+const multer = require('multer');
 
 // Models & Utilities
 const Service = require('./models/Service');
@@ -28,6 +30,27 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const SALON_NAME = process.env.SALON_NAME || 'Mini Room Nail & Eyelash';
 const SALON_PHONE = process.env.SALON_PHONE || '012345678';
+
+// ==========================================
+// MULTER — In-memory storage for Supabase uploads
+// ==========================================
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const ALLOWED_EXTENSIONS = /\.(jpg|jpeg|png|webp)$/i;
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_FILE_SIZE_BYTES },
+  fileFilter: (req, file, cb) => {
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      return cb(new Error('INVALID_MIME: Only JPG, JPEG, PNG, and WebP images are allowed.'));
+    }
+    if (!ALLOWED_EXTENSIONS.test(file.originalname)) {
+      return cb(new Error('INVALID_EXT: File extension does not match allowed image types.'));
+    }
+    cb(null, true);
+  }
+});
 
 // Express middleware
 app.set('view engine', 'ejs');
@@ -858,13 +881,100 @@ app.get('/admin/retention/dry-run', adminAuth, async (req, res) => {
   }
 });
 
+// ==========================================
+// ADMIN IMAGE UPLOAD ENDPOINT (Protected)
+// POST /admin/services/upload-image
+// Accepts a single image file, validates it, uploads to Supabase Storage,
+// and returns the public URL — never stores binary data in PostgreSQL.
+// ==========================================
+app.post('/admin/services/upload-image', adminAuth, (req, res) => {
+  upload.single('serviceImage')(req, res, async (multerErr) => {
+    // Handle multer errors (file size, MIME type, etc.)
+    if (multerErr) {
+      if (multerErr.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ success: false, message: 'File too large. Maximum upload size is 5 MB.' });
+      }
+      const msg = multerErr.message || 'Invalid file.';
+      return res.status(400).json({ success: false, message: msg.replace(/^(INVALID_MIME|INVALID_EXT): /, '') });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No image file was received.' });
+    }
+
+    const file = req.file;
+
+    // Secondary MIME validation against file buffer magic bytes
+    const magicMap = {
+      'ffd8ff': 'image/jpeg',
+      '89504e47': 'image/png',
+      '52494646': 'image/webp' // RIFF....WEBP
+    };
+    const hex4 = file.buffer.slice(0, 4).toString('hex');
+    const hex3 = file.buffer.slice(0, 3).toString('hex');
+    const detectedMime = magicMap[hex4] || magicMap[hex3] || null;
+
+    // For WebP: bytes 8-11 must be 'WEBP'
+    let isWebp = false;
+    if (hex4 === '52494646' && file.buffer.length >= 12) {
+      isWebp = file.buffer.slice(8, 12).toString('ascii') === 'WEBP';
+    }
+
+    const mimeOk = detectedMime === 'image/jpeg' || detectedMime === 'image/png' ||
+      (detectedMime === 'image/webp' && isWebp);
+
+    if (!mimeOk) {
+      return res.status(400).json({ success: false, message: 'Uploaded file does not appear to be a valid JPG, PNG, or WebP image.' });
+    }
+
+    // Generate a safe, unique filename (no path traversal possible)
+    const ext = file.originalname.split('.').pop().toLowerCase().replace(/[^a-z]/g, '') || 'jpg';
+    const uniqueName = `services/${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
+
+    try {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('service-images')
+        .upload(uniqueName, file.buffer, {
+          contentType: file.mimetype,
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('[Storage Upload Error]', uploadError.message);
+        return res.status(500).json({ success: false, message: `Storage upload failed: ${uploadError.message}` });
+      }
+
+      // Retrieve the public URL for the uploaded image
+      const { data: urlData } = supabase.storage
+        .from('service-images')
+        .getPublicUrl(uploadData.path);
+
+      const publicUrl = urlData?.publicUrl;
+      if (!publicUrl) {
+        // Attempt cleanup of orphaned uploaded file
+        await supabase.storage.from('service-images').remove([uploadData.path]).catch(() => {});
+        return res.status(500).json({ success: false, message: 'Could not retrieve public URL for uploaded image.' });
+      }
+
+      console.log(`[Admin Audit] Service image uploaded: ${uploadData.path}`);
+      return res.json({ success: true, imageUrl: publicUrl, storagePath: uploadData.path });
+    } catch (err) {
+      console.error('[Image Upload] Unexpected error:', err.message);
+      return res.status(500).json({ success: false, message: 'An unexpected error occurred during upload.' });
+    }
+  });
+});
+
 // Add Fingernail Service
 app.post('/admin/services', adminAuth, async (req, res) => {
   try {
-    const { name, nameKm, price, durationMinutes, description, descriptionKm, imageUrl } = req.body;
+    const { name, nameKm, price, durationMinutes, description, descriptionKm, imageUrl, uploadedImageUrl } = req.body;
     if (!name?.trim() || !nameKm?.trim() || isNaN(price) || isNaN(durationMinutes)) {
       return res.redirect('/admin?tab=services&type=danger&msg=Please fill in all service details.');
     }
+
+    // Resolve final image URL: uploaded file takes priority over pasted URL
+    const finalImageUrl = (uploadedImageUrl?.trim() || imageUrl?.trim() || '').trim();
 
     await Service.create({
       name: name.trim(),
@@ -873,7 +983,7 @@ app.post('/admin/services', adminAuth, async (req, res) => {
       durationMinutes: Number(durationMinutes),
       description: description?.trim() || '',
       descriptionKm: descriptionKm?.trim() || '',
-      imageUrl: imageUrl?.trim() || '',
+      imageUrl: finalImageUrl,
       category: 'fingernail',
       isActive: true
     });
@@ -888,7 +998,11 @@ app.post('/admin/services', adminAuth, async (req, res) => {
 // Update Fingernail Service
 app.post('/admin/services/:id/update', adminAuth, async (req, res) => {
   try {
-    const { name, nameKm, price, durationMinutes, description, descriptionKm, imageUrl } = req.body;
+    const { name, nameKm, price, durationMinutes, description, descriptionKm, imageUrl, uploadedImageUrl } = req.body;
+
+    // Resolve final image URL: uploaded file takes priority over pasted URL
+    const finalImageUrl = (uploadedImageUrl?.trim() || imageUrl?.trim() || '').trim();
+
     await Service.findByIdAndUpdate(req.params.id, {
       name: name.trim(),
       nameKm: nameKm.trim(),
@@ -896,7 +1010,7 @@ app.post('/admin/services/:id/update', adminAuth, async (req, res) => {
       durationMinutes: Number(durationMinutes),
       description: description?.trim() || '',
       descriptionKm: descriptionKm?.trim() || '',
-      imageUrl: imageUrl?.trim() || ''
+      imageUrl: finalImageUrl
     });
 
     res.redirect('/admin?tab=services&type=success&msg=' + encodeURIComponent('Service updated successfully.'));

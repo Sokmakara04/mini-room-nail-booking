@@ -23,6 +23,121 @@
       background: #ffffff;
       border-bottom: 3px solid var(--primary);
     }
+
+    /* =============================================
+       Dual Image Input Styles
+       ============================================= */
+    .img-mode-switcher {
+      display: inline-flex;
+      background: #f1f1f1;
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .img-mode-btn {
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      padding: 6px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #6c757d;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .img-mode-btn.active {
+      background: #fff;
+      color: #c2185b;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    }
+    .img-mode-btn:hover:not(.active) {
+      color: #333;
+      background: rgba(255,255,255,0.6);
+    }
+    .img-preview-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-top: 6px;
+    }
+    .img-preview {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      flex-shrink: 0;
+    }
+    .img-current-preview {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+    .img-preview-label {
+      font-size: 0.78rem;
+      color: #555;
+    }
+    .upload-drop-zone {
+      border: 2px dashed #c2185b;
+      border-radius: 10px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.18s, border-color 0.18s;
+      background: #fff5f8;
+    }
+    .upload-drop-zone:hover,
+    .upload-drop-zone.dragover {
+      background: #ffe0eb;
+      border-color: #880e4f;
+    }
+    .upload-drop-icon { font-size: 1.8rem; margin-bottom: 4px; }
+    .upload-drop-text { font-size: 0.88rem; color: #333; font-weight: 500; }
+    .upload-drop-hint { font-size: 0.76rem; color: #888; margin-top: 2px; }
+    .upload-file-input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .upload-progress-bar-wrap {
+      margin-top: 8px;
+    }
+    .upload-progress-text {
+      font-size: 0.76rem;
+      color: #555;
+      margin-top: 3px;
+      text-align: center;
+    }
+    .upload-error-msg {
+      margin-top: 6px;
+      color: #dc3545;
+      font-size: 0.82rem;
+      background: #fff5f5;
+      border: 1px solid #f5c6cb;
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+    .btn-img-clear {
+      background: none;
+      border: none;
+      color: #c2185b;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+    }
+    .btn-img-clear:hover { color: #880e4f; }
   </style>
 </head>
 
@@ -698,19 +813,21 @@
 
   <!-- MODAL: ADD FINGERNAIL SERVICE -->
   <div class="modal fade" id="addServiceModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
-        <form method="post" action="/admin/services">
+        <form method="post" action="/admin/services" id="addServiceForm">
+          <!-- Hidden field: holds the Supabase Storage URL when admin uses upload -->
+          <input type="hidden" name="uploadedImageUrl" id="addUploadedImageUrl">
           <div class="modal-header">
             <h5 class="modal-title fw-bold">💅 Add New Fingernail Service</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body row g-3">
-            <div class="col-12">
+            <div class="col-md-6">
               <label class="form-label small fw-bold">Service Name (English)</label>
               <input type="text" name="name" class="form-control" placeholder="e.g. Chrome Nail Art Design" required>
             </div>
-            <div class="col-12">
+            <div class="col-md-6">
               <label class="form-label small fw-bold">Service Name (Khmer)</label>
               <input type="text" name="nameKm" class="form-control" placeholder="e.g. គូរម៉ូដក្រចកបែប Chrome" required>
             </div>
@@ -724,22 +841,62 @@
             </div>
             <div class="col-12">
               <label class="form-label small fw-bold">Description (English)</label>
-              <textarea name="description" class="form-control" rows="2"
-                placeholder="Brief service details..."></textarea>
+              <textarea name="description" class="form-control" rows="2" placeholder="Brief service details..."></textarea>
             </div>
             <div class="col-12">
-              <label class="form-label small fw-bold">Description (Khmer)</label>
-              <textarea name="descriptionKm" class="form-control" rows="2"
-                placeholder="ព័ត៌មានលម្អិតពីសេវាកម្មជាភាសាខ្មែរ..."></textarea>
+              <label class="form-label small fw-bold">Description (Khmer / ខ្មែរ)</label>
+              <textarea name="descriptionKm" class="form-control" rows="2" placeholder="ព័ត៌មានលម្អិតពីសេវាកម្មជាភាសាខ្មែរ..."></textarea>
             </div>
+
+            <!-- ===== DUAL IMAGE INPUT ===== -->
             <div class="col-12">
-              <label class="form-label small fw-bold">Image URL (Optional)</label>
-              <input type="url" name="imageUrl" class="form-control" placeholder="https://example.com/nails.jpg">
+              <label class="form-label small fw-bold d-block mb-2">Service Image (Optional)</label>
+              <!-- Segmented control to switch mode -->
+              <div class="img-mode-switcher mb-3" id="addImgSwitcher">
+                <button type="button" class="img-mode-btn active" data-mode="url" data-target="add">
+                  🔗 Image URL
+                </button>
+                <button type="button" class="img-mode-btn" data-mode="upload" data-target="add">
+                  📤 Upload Image
+                </button>
+              </div>
+
+              <!-- Option A: Image URL -->
+              <div id="addImgUrlPane">
+                <input type="url" name="imageUrl" id="addImageUrlInput" class="form-control mb-2"
+                  placeholder="https://example.com/nail-art.jpg">
+                <div id="addUrlPreviewWrap" class="img-preview-wrap" style="display:none;">
+                  <img id="addUrlPreviewImg" src="" alt="Preview" class="img-preview">
+                  <div class="img-preview-label">URL Preview</div>
+                </div>
+              </div>
+
+              <!-- Option B: Upload Image -->
+              <div id="addImgUploadPane" style="display:none;">
+                <div class="upload-drop-zone" id="addDropZone">
+                  <div class="upload-drop-icon">🖼️</div>
+                  <div class="upload-drop-text">Drag & drop or <strong>click to browse</strong></div>
+                  <div class="upload-drop-hint">JPG, PNG, WebP &bull; Max 5 MB</div>
+                  <input type="file" id="addImageFileInput" accept=".jpg,.jpeg,.png,.webp" class="upload-file-input">
+                </div>
+                <div id="addUploadProgress" class="upload-progress-bar-wrap" style="display:none;">
+                  <div class="progress" style="height:6px;">
+                    <div id="addUploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:0%"></div>
+                  </div>
+                  <div class="upload-progress-text" id="addUploadProgressText">Uploading...</div>
+                </div>
+                <div id="addUploadError" class="upload-error-msg" style="display:none;"></div>
+                <div id="addUploadPreviewWrap" class="img-preview-wrap" style="display:none;">
+                  <img id="addUploadPreviewImg" src="" alt="Uploaded Preview" class="img-preview">
+                  <div class="img-preview-label" id="addUploadPreviewLabel">Uploaded &bull; <button type="button" class="btn-img-clear" id="addClearUpload">Remove</button></div>
+                </div>
+              </div>
             </div>
+            <!-- ===== END DUAL IMAGE INPUT ===== -->
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn-nail btn-sm">Add Service</button>
+            <button type="submit" class="btn-nail btn-sm" id="addServiceSubmitBtn">Add Service</button>
           </div>
         </form>
       </div>
@@ -748,19 +905,21 @@
 
   <!-- MODAL: EDIT FINGERNAIL SERVICE -->
   <div class="modal fade" id="editServiceModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
         <form id="editServiceForm" method="post" action="">
+          <!-- Hidden field: holds the Supabase Storage URL when admin uses upload -->
+          <input type="hidden" name="uploadedImageUrl" id="editUploadedImageUrl">
           <div class="modal-header">
             <h5 class="modal-title fw-bold">✏️ Edit Fingernail Service</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body row g-3">
-            <div class="col-12">
+            <div class="col-md-6">
               <label class="form-label small fw-bold">Service Name (English)</label>
               <input type="text" id="editServiceName" name="name" class="form-control" required>
             </div>
-            <div class="col-12">
+            <div class="col-md-6">
               <label class="form-label small fw-bold">Service Name (Khmer)</label>
               <input type="text" id="editServiceNameKm" name="nameKm" class="form-control" required>
             </div>
@@ -770,21 +929,68 @@
             </div>
             <div class="col-6">
               <label class="form-label small fw-bold">Duration (Minutes)</label>
-              <input type="number" id="editServiceDuration" name="durationMinutes" class="form-control" min="10"
-                step="5" required>
+              <input type="number" id="editServiceDuration" name="durationMinutes" class="form-control" min="10" step="5" required>
             </div>
             <div class="col-12">
               <label class="form-label small fw-bold">Description (English)</label>
               <textarea id="editServiceDesc" name="description" class="form-control" rows="2"></textarea>
             </div>
             <div class="col-12">
-              <label class="form-label small fw-bold">Description (Khmer)</label>
+              <label class="form-label small fw-bold">Description (Khmer / ខ្មែរ)</label>
               <textarea id="editServiceDescKm" name="descriptionKm" class="form-control" rows="2"></textarea>
             </div>
+
+            <!-- ===== DUAL IMAGE INPUT ===== -->
             <div class="col-12">
-              <label class="form-label small fw-bold">Image URL</label>
-              <input type="url" id="editServiceImage" name="imageUrl" class="form-control">
+              <label class="form-label small fw-bold d-block mb-2">Service Image</label>
+              <!-- Current image preview (shown when service already has an image) -->
+              <div id="editCurrentImageWrap" class="mb-2" style="display:none;">
+                <div class="small text-muted mb-1">Current image:</div>
+                <img id="editCurrentImagePreview" src="" alt="Current image" class="img-current-preview">
+              </div>
+
+              <!-- Segmented control to switch mode -->
+              <div class="img-mode-switcher mb-3" id="editImgSwitcher">
+                <button type="button" class="img-mode-btn active" data-mode="url" data-target="edit">
+                  🔗 Image URL
+                </button>
+                <button type="button" class="img-mode-btn" data-mode="upload" data-target="edit">
+                  📤 Upload Image
+                </button>
+              </div>
+
+              <!-- Option A: Image URL -->
+              <div id="editImgUrlPane">
+                <input type="url" name="imageUrl" id="editServiceImage" class="form-control mb-2"
+                  placeholder="https://example.com/nail-art.jpg">
+                <div id="editUrlPreviewWrap" class="img-preview-wrap" style="display:none;">
+                  <img id="editUrlPreviewImg" src="" alt="Preview" class="img-preview">
+                  <div class="img-preview-label">URL Preview</div>
+                </div>
+              </div>
+
+              <!-- Option B: Upload Image -->
+              <div id="editImgUploadPane" style="display:none;">
+                <div class="upload-drop-zone" id="editDropZone">
+                  <div class="upload-drop-icon">🖼️</div>
+                  <div class="upload-drop-text">Drag & drop or <strong>click to browse</strong></div>
+                  <div class="upload-drop-hint">JPG, PNG, WebP &bull; Max 5 MB</div>
+                  <input type="file" id="editImageFileInput" accept=".jpg,.jpeg,.png,.webp" class="upload-file-input">
+                </div>
+                <div id="editUploadProgress" class="upload-progress-bar-wrap" style="display:none;">
+                  <div class="progress" style="height:6px;">
+                    <div id="editUploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:0%"></div>
+                  </div>
+                  <div class="upload-progress-text" id="editUploadProgressText">Uploading...</div>
+                </div>
+                <div id="editUploadError" class="upload-error-msg" style="display:none;"></div>
+                <div id="editUploadPreviewWrap" class="img-preview-wrap" style="display:none;">
+                  <img id="editUploadPreviewImg" src="" alt="Uploaded Preview" class="img-preview">
+                  <div class="img-preview-label" id="editUploadPreviewLabel">Uploaded &bull; <button type="button" class="btn-img-clear" id="editClearUpload">Remove</button></div>
+                </div>
+              </div>
             </div>
+            <!-- ===== END DUAL IMAGE INPUT ===== -->
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
@@ -866,12 +1072,195 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // ======================================================
+    // DUAL IMAGE INPUT — Shared helper logic
+    // ======================================================
+    const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
+    const ALLOWED_EXTS = /\.(jpg|jpeg|png|webp)$/i;
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+    /**
+     * Switches the image input mode (url | upload) for a given prefix (add | edit).
+     */
+    function switchImageMode(prefix, mode) {
+      const switcher = document.getElementById(prefix + 'ImgSwitcher');
+      const urlPane = document.getElementById(prefix + 'ImgUrlPane');
+      const uploadPane = document.getElementById(prefix + 'ImgUploadPane');
+      if (!switcher || !urlPane || !uploadPane) return;
+
+      switcher.querySelectorAll('.img-mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+
+      urlPane.style.display = mode === 'url' ? '' : 'none';
+      uploadPane.style.display = mode === 'upload' ? '' : 'none';
+    }
+
+    /**
+     * Shows a live URL preview after debounce.
+     */
+    function setupUrlPreview(inputId, previewWrapId, previewImgId) {
+      const input = document.getElementById(inputId);
+      const wrap = document.getElementById(previewWrapId);
+      const img = document.getElementById(previewImgId);
+      if (!input || !wrap || !img) return;
+      let timer;
+      input.addEventListener('input', () => {
+        clearTimeout(timer);
+        const val = input.value.trim();
+        if (!val) { wrap.style.display = 'none'; return; }
+        timer = setTimeout(() => {
+          img.src = val;
+          img.onload = () => { wrap.style.display = 'flex'; };
+          img.onerror = () => { wrap.style.display = 'none'; };
+        }, 450);
+      });
+    }
+
+    /**
+     * Sets up drag-and-drop + click-to-browse upload zone with AJAX upload.
+     */
+    function setupUploadZone(prefix) {
+      const fileInput = document.getElementById(prefix + 'ImageFileInput');
+      const dropZone = document.getElementById(prefix + 'DropZone');
+      const progressWrap = document.getElementById(prefix + 'UploadProgress');
+      const progressBar = document.getElementById(prefix + 'UploadProgressBar');
+      const progressText = document.getElementById(prefix + 'UploadProgressText');
+      const errorBox = document.getElementById(prefix + 'UploadError');
+      const previewWrap = document.getElementById(prefix + 'UploadPreviewWrap');
+      const previewImg = document.getElementById(prefix + 'UploadPreviewImg');
+      const clearBtn = document.getElementById(prefix + 'ClearUpload');
+      const hiddenUrl = document.getElementById(prefix + 'UploadedImageUrl');
+      if (!fileInput || !dropZone || !hiddenUrl) return;
+
+      // Drag-and-drop visual feedback
+      dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+      dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+      });
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files[0]) handleFile(fileInput.files[0]);
+      });
+      if (clearBtn) clearBtn.addEventListener('click', clearUpload);
+
+      function clearUpload() {
+        hiddenUrl.value = '';
+        if (previewWrap) previewWrap.style.display = 'none';
+        if (errorBox) errorBox.style.display = 'none';
+        if (progressWrap) progressWrap.style.display = 'none';
+        fileInput.value = '';
+      }
+
+      function showError(msg) {
+        if (errorBox) { errorBox.textContent = '⚠️ ' + msg; errorBox.style.display = 'block'; }
+        if (progressWrap) progressWrap.style.display = 'none';
+        if (previewWrap) previewWrap.style.display = 'none';
+        hiddenUrl.value = '';
+      }
+
+      async function handleFile(file) {
+        // Client-side validation
+        if (!ALLOWED_TYPES.includes(file.type) || !ALLOWED_EXTS.test(file.name)) {
+          return showError('Invalid file type. Only JPG, JPEG, PNG, and WebP are allowed.');
+        }
+        if (file.size > MAX_UPLOAD_BYTES) {
+          return showError('File too large. Maximum size is 5 MB.');
+        }
+
+        // Show progress
+        if (errorBox) errorBox.style.display = 'none';
+        if (previewWrap) previewWrap.style.display = 'none';
+        if (progressWrap) progressWrap.style.display = 'block';
+        if (progressBar) { progressBar.style.width = '0%'; }
+        if (progressText) progressText.textContent = 'Uploading...';
+        hiddenUrl.value = '';
+
+        // Simulate early progress for UX
+        let fakeProgress = 0;
+        const fakeTimer = setInterval(() => {
+          fakeProgress = Math.min(fakeProgress + 8, 75);
+          if (progressBar) progressBar.style.width = fakeProgress + '%';
+        }, 150);
+
+        try {
+          const formData = new FormData();
+          formData.append('serviceImage', file);
+
+          const resp = await fetch('/admin/services/upload-image', {
+            method: 'POST',
+            body: formData
+          });
+
+          clearInterval(fakeTimer);
+
+          if (!resp.ok && resp.status === 401) {
+            return showError('Session expired. Please refresh and log in again.');
+          }
+
+          const result = await resp.json();
+
+          if (progressBar) progressBar.style.width = '100%';
+          if (progressText) progressText.textContent = result.success ? 'Upload complete!' : 'Upload failed.';
+
+          if (!result.success) {
+            return showError(result.message || 'Upload failed. Please try again.');
+          }
+
+          // Store Supabase URL in hidden field
+          hiddenUrl.value = result.imageUrl;
+
+          // Show preview
+          if (previewImg) previewImg.src = result.imageUrl;
+          if (previewWrap) previewWrap.style.display = 'flex';
+
+          setTimeout(() => { if (progressWrap) progressWrap.style.display = 'none'; }, 1000);
+        } catch (err) {
+          clearInterval(fakeTimer);
+          showError('Network error during upload. Check connection and try again.');
+        }
+      }
+    }
+
+    // Wire up switcher buttons for both modals
+    document.querySelectorAll('.img-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchImageMode(btn.dataset.target, btn.dataset.mode);
+      });
+    });
+
+    // Setup URL previews
+    setupUrlPreview('addImageUrlInput', 'addUrlPreviewWrap', 'addUrlPreviewImg');
+    setupUrlPreview('editServiceImage', 'editUrlPreviewWrap', 'editUrlPreviewImg');
+
+    // Setup upload zones
+    setupUploadZone('add');
+    setupUploadZone('edit');
+
+    // Reset Add modal state on close
+    const addServiceModal = document.getElementById('addServiceModal');
+    if (addServiceModal) {
+      addServiceModal.addEventListener('hidden.bs.modal', () => {
+        document.getElementById('addServiceForm').reset();
+        document.getElementById('addUploadedImageUrl').value = '';
+        document.getElementById('addUrlPreviewWrap').style.display = 'none';
+        document.getElementById('addUploadPreviewWrap').style.display = 'none';
+        document.getElementById('addUploadError').style.display = 'none';
+        document.getElementById('addUploadProgress').style.display = 'none';
+        switchImageMode('add', 'url');
+      });
+    }
+
     // Edit Service Modal Population
     const editServiceModal = document.getElementById('editServiceModal');
     if (editServiceModal) {
       editServiceModal.addEventListener('show.bs.modal', function (event) {
         const button = event.relatedTarget;
         const id = button.getAttribute('data-id');
+        const existingImage = button.getAttribute('data-image') || '';
+
         document.getElementById('editServiceForm').action = `/admin/services/${id}/update`;
         document.getElementById('editServiceName').value = button.getAttribute('data-name') || '';
         document.getElementById('editServiceNameKm').value = button.getAttribute('data-namekm') || '';
@@ -879,7 +1268,43 @@
         document.getElementById('editServiceDuration').value = button.getAttribute('data-duration') || '45';
         document.getElementById('editServiceDesc').value = button.getAttribute('data-desc') || '';
         document.getElementById('editServiceDescKm').value = button.getAttribute('data-desckm') || '';
-        document.getElementById('editServiceImage').value = button.getAttribute('data-image') || '';
+        document.getElementById('editServiceImage').value = existingImage;
+
+        // Reset upload state
+        document.getElementById('editUploadedImageUrl').value = '';
+        document.getElementById('editUploadPreviewWrap').style.display = 'none';
+        document.getElementById('editUploadError').style.display = 'none';
+        document.getElementById('editUploadProgress').style.display = 'none';
+        switchImageMode('edit', 'url');
+
+        // Trigger URL preview if existing image exists
+        const urlPreviewImg = document.getElementById('editUrlPreviewImg');
+        const urlPreviewWrap = document.getElementById('editUrlPreviewWrap');
+        const currentWrap = document.getElementById('editCurrentImageWrap');
+        const currentImg = document.getElementById('editCurrentImagePreview');
+
+        if (existingImage) {
+          // Show current image
+          if (currentImg) currentImg.src = existingImage;
+          if (currentWrap) currentWrap.style.display = 'flex';
+          // Also show in URL pane preview
+          if (urlPreviewImg) urlPreviewImg.src = existingImage;
+          if (urlPreviewWrap) urlPreviewWrap.style.display = 'flex';
+        } else {
+          if (currentWrap) currentWrap.style.display = 'none';
+          if (urlPreviewWrap) urlPreviewWrap.style.display = 'none';
+        }
+      });
+
+      // Reset on close
+      editServiceModal.addEventListener('hidden.bs.modal', () => {
+        document.getElementById('editUploadedImageUrl').value = '';
+        document.getElementById('editUploadPreviewWrap').style.display = 'none';
+        document.getElementById('editUploadError').style.display = 'none';
+        document.getElementById('editUploadProgress').style.display = 'none';
+        document.getElementById('editCurrentImageWrap').style.display = 'none';
+        document.getElementById('editUrlPreviewWrap').style.display = 'none';
+        switchImageMode('edit', 'url');
       });
     }
 

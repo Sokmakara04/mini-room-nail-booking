@@ -17,7 +17,8 @@
     "dotenv": "^16.4.7",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
-    "express-basic-auth": "^1.2.1"
+    "express-basic-auth": "^1.2.1",
+    "multer": "^2.5.0"
   },
   "optionalDependencies": {
     "mongoose": "^8.9.5"
