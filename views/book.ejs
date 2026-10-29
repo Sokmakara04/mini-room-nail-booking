@@ -51,15 +51,34 @@
               </label>
               <select class="form-select form-select-lg" id="serviceSelect" name="serviceId" required>
                 <option value=""><%= lang === 'km' ? '-- សូមជ្រើសរើសសេវាកម្ម --' : '-- Choose a service --' %></option>
-                <% services.forEach(s => { %>
-                  <option value="<%= s._id %>" 
-                    data-price="<%= s.price %>" 
-                    data-duration="<%= s.durationMinutes %>"
-                    data-name="<%= lang === 'km' ? s.nameKm : s.name %>"
-                    <%= String(s._id) === String(selectedServiceId) ? 'selected' : '' %>>
-                    <%= lang === 'km' ? s.nameKm : s.name %> — $<%= s.price %> (<%= s.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>)
-                  </option>
-                <% }) %>
+                <% if (typeof serviceGroups !== 'undefined' && serviceGroups && serviceGroups.length > 0) { %>
+                  <% serviceGroups.forEach(g => { 
+                       const grpServices = services.filter(s => String(s.groupId) === String(g.id));
+                       if (grpServices.length > 0) {
+                  %>
+                    <optgroup label="💅 <%= lang === 'km' ? g.nameKm : g.name %> (<%= lang === 'km' ? g.name : g.nameKm %>)">
+                      <% grpServices.forEach(s => { %>
+                        <option value="<%= s._id %>" 
+                          data-price="<%= s.price %>" 
+                          data-duration="<%= s.durationMinutes %>"
+                          data-name="<%= lang === 'km' ? s.nameKm : s.name %>"
+                          <%= String(s._id) === String(selectedServiceId) ? 'selected' : '' %>>
+                          <%= lang === 'km' ? s.nameKm : s.name %> — $<%= s.price %> (<%= s.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>)
+                        </option>
+                      <% }) %>
+                    </optgroup>
+                  <% } }) %>
+                <% } else { %>
+                  <% services.forEach(s => { %>
+                    <option value="<%= s._id %>" 
+                      data-price="<%= s.price %>" 
+                      data-duration="<%= s.durationMinutes %>"
+                      data-name="<%= lang === 'km' ? s.nameKm : s.name %>"
+                      <%= String(s._id) === String(selectedServiceId) ? 'selected' : '' %>>
+                      <%= lang === 'km' ? s.nameKm : s.name %> — $<%= s.price %> (<%= s.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>)
+                    </option>
+                  <% }) %>
+                <% } %>
               </select>
             </div>
 

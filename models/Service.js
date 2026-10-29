@@ -1,10 +1,16 @@
 const { supabase } = require('../config/supabase');
+const ServiceGroup = require('./ServiceGroup');
 
 function toCamelService(row) {
   if (!row) return null;
+  const serviceId = String(row.id);
+  const groupId = row.group_id
+    ? String(row.group_id)
+    : ServiceGroup.getAssignedGroupId(serviceId, row.name);
+
   const s = {
-    id: String(row.id),
-    _id: String(row.id),
+    id: serviceId,
+    _id: serviceId,
     name: row.name,
     nameKm: row.name_km,
     price: Number(row.price),
@@ -13,31 +19,59 @@ function toCamelService(row) {
     descriptionKm: row.description_km || '',
     imageUrl: row.image_url || '',
     category: row.category || 'fingernail',
+    groupId: groupId,
     isActive: Boolean(row.is_active),
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
 
   s.save = async function () {
-    const { data, error } = await supabase
-      .from('services')
-      .update({
-        name: this.name,
-        name_km: this.nameKm,
-        price: this.price,
-        duration_minutes: this.durationMinutes,
-        description: this.description,
-        description_km: this.descriptionKm,
-        image_url: this.imageUrl,
-        category: this.category,
-        is_active: this.isActive
-      })
-      .eq('id', this.id)
-      .select()
-      .single();
+    const updateObj = {
+      name: this.name,
+      name_km: this.nameKm,
+      price: this.price,
+      duration_minutes: this.durationMinutes,
+      description: this.description,
+      description_km: this.descriptionKm,
+      image_url: this.imageUrl,
+      category: this.category,
+      is_active: this.isActive
+    };
 
-    if (error) throw new Error(`Service update failed: ${error.message}`);
-    return toCamelService(data);
+    if (this.groupId) {
+      updateObj.group_id = this.groupId;
+      ServiceGroup.setAssignedGroupId(this.id, this.groupId);
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .update(updateObj)
+        .eq('id', this.id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return toCamelService(data);
+      }
+      if (error && error.message.includes('group_id')) {
+        // Column group_id not yet created in Supabase schema
+        delete updateObj.group_id;
+        const retry = await supabase
+          .from('services')
+          .update(updateObj)
+          .eq('id', this.id)
+          .select()
+          .single();
+        if (retry.error) throw new Error(`Service update failed: ${retry.error.message}`);
+        return toCamelService(retry.data);
+      }
+      if (error) throw new Error(`Service update failed: ${error.message}`);
+    } catch (err) {
+      throw err;
+    }
+
+    return this;
   };
 
   return s;
@@ -104,7 +138,13 @@ class ServiceQuery {
       return [];
     }
 
-    return (data || []).map(toCamelService);
+    let results = (data || []).map(toCamelService);
+
+    if (this.filter.groupId) {
+      results = results.filter(s => String(s.groupId) === String(this.filter.groupId));
+    }
+
+    return results;
   }
 }
 
@@ -155,16 +195,41 @@ const Service = {
       payload.id = String(serviceData.id || serviceData._id);
     }
 
-    const { data, error } = await supabase
-      .from('services')
-      .insert([payload])
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to create service in Supabase: ${error.message}`);
+    if (serviceData.groupId) {
+      payload.group_id = String(serviceData.groupId);
     }
-    return toCamelService(data);
+
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .insert([payload])
+        .select()
+        .single();
+
+      if (!error && data) {
+        if (serviceData.groupId) {
+          ServiceGroup.setAssignedGroupId(String(data.id), serviceData.groupId);
+        }
+        return toCamelService(data);
+      }
+
+      if (error && error.message.includes('group_id')) {
+        delete payload.group_id;
+        const retry = await supabase
+          .from('services')
+          .insert([payload])
+          .select()
+          .single();
+        if (retry.error) throw new Error(`Failed to create service in Supabase: ${retry.error.message}`);
+        if (serviceData.groupId) {
+          ServiceGroup.setAssignedGroupId(String(retry.data.id), serviceData.groupId);
+        }
+        return toCamelService(retry.data);
+      }
+      if (error) throw new Error(`Failed to create service in Supabase: ${error.message}`);
+    } catch (err) {
+      throw err;
+    }
   },
 
   async findByIdAndUpdate(id, updateData) {
@@ -178,18 +243,43 @@ const Service = {
     if (updateData.imageUrl !== undefined) payload.image_url = updateData.imageUrl.trim();
     if (updateData.category !== undefined) payload.category = updateData.category;
     if (updateData.isActive !== undefined) payload.is_active = Boolean(updateData.isActive);
-
-    const { data, error } = await supabase
-      .from('services')
-      .update(payload)
-      .eq('id', String(id))
-      .select()
-      .maybeSingle();
-
-    if (error) {
-      throw new Error(`Failed to update service in Supabase: ${error.message}`);
+    if (updateData.groupId !== undefined) {
+      payload.group_id = updateData.groupId ? String(updateData.groupId) : null;
+      ServiceGroup.setAssignedGroupId(String(id), updateData.groupId);
     }
-    return toCamelService(data);
+
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .update(payload)
+        .eq('id', String(id))
+        .select()
+        .maybeSingle();
+
+      if (!error && data) {
+        return toCamelService(data);
+      }
+
+      if (error && error.message.includes('group_id')) {
+        delete payload.group_id;
+        const retry = await supabase
+          .from('services')
+          .update(payload)
+          .eq('id', String(id))
+          .select()
+          .maybeSingle();
+        if (retry.error) throw new Error(`Failed to update service in Supabase: ${retry.error.message}`);
+        return toCamelService(retry.data);
+      }
+      if (error) throw new Error(`Failed to update service in Supabase: ${error.message}`);
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  async moveToGroup(serviceId, groupId) {
+    ServiceGroup.setAssignedGroupId(String(serviceId), groupId);
+    return this.findByIdAndUpdate(serviceId, { groupId });
   },
 
   async findByIdAndDelete(id) {
@@ -217,79 +307,6 @@ const Service = {
       return 0;
     }
     return count || 0;
-  },
-
-  async seedDefaults() {
-    const count = await this.countDocuments();
-    if (count === 0) {
-      const defaults = [
-        {
-          name: 'Basic Manicure',
-          nameKm: 'កាត់និងសម្អាតក្រចកដៃមូលដ្ឋាន',
-          price: 12,
-          durationMinutes: 35,
-          description: 'Nail shaping, cuticle trimming, gentle buffing, and nourishing hand massage.',
-          descriptionKm: 'កាត់តម្រឹមរាងក្រចក សម្អាតគល់ក្រចក និងម៉ាស្សាបាតដៃយ៉ាងទន់ភ្លន់។',
-          imageUrl: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=600&q=80',
-          isActive: true
-        },
-        {
-          name: 'Gel Nail Polish',
-          nameKm: 'លាបថ្នាំជែលក្រចកដៃ',
-          price: 20,
-          durationMinutes: 45,
-          description: 'Long-lasting premium gel polish with high-gloss shine and UV-LED cure.',
-          descriptionKm: 'លាបថ្នាំជែលជាប់បានយូរ ភ្លឺរលោងស្អាត និងស្ងួតឆាប់រហ័សដោយពន្លឺ UV-LED។',
-          imageUrl: 'https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=600&q=80',
-          isActive: true
-        },
-        {
-          name: 'Nail Art Design',
-          nameKm: 'គូរម៉ូដសិល្បៈក្រចកដៃ',
-          price: 28,
-          durationMinutes: 60,
-          description: 'Custom creative hand-painted nail art, minimalist lines, chrome, or glitter finish.',
-          descriptionKm: 'គូរម៉ូដសិល្បៈក្រចកដៃតាមចំណូលចិត្ត ក្បាច់រចនាស្អាតប្លែក និងទាន់សម័យ។',
-          imageUrl: 'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&w=600&q=80',
-          isActive: true
-        },
-        {
-          name: 'Nail Extensions (Gel / Acrylic)',
-          nameKm: 'តក្រចកដៃ (ជែល ឬ អាគ្រីលីក)',
-          price: 38,
-          durationMinutes: 75,
-          description: 'Full set fingernail extensions to add length and strength with flawless shaping.',
-          descriptionKm: 'តប្រវែងក្រចកដៃឱ្យស្រស់ស្អាត រឹងមាំ និងរាងសមសួនទាក់ទាញ។',
-          imageUrl: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80',
-          isActive: true
-        },
-        {
-          name: 'Gel Removal & Care',
-          nameKm: 'ដោះជែលនិងថែបំប៉នក្រចកដៃ',
-          price: 10,
-          durationMinutes: 25,
-          description: 'Gentle, damage-free gel polish removal followed by cuticle oil and keratin strengthener.',
-          descriptionKm: 'ដោះថ្នាំជែលចាស់ចេញដោយមិនប៉ះពាល់ក្រចក រួមជាមួយការបំប៉នប្រេងខេរ៉ាទីន។',
-          imageUrl: 'https://images.unsplash.com/photo-1599839575945-a9e5af0c3fa5?auto=format&fit=crop&w=600&q=80',
-          isActive: true
-        },
-        {
-          name: 'French Manicure Tips',
-          nameKm: 'ម៉ូដក្រចកបារាំង (French Manicure)',
-          price: 24,
-          durationMinutes: 50,
-          description: 'Timeless classic French tips manicure with natural pink base and crisp white edges.',
-          descriptionKm: 'រចនាបែបបារាំងបុរាណ គល់ផ្កាឈូកធម្មជាតិ និងចុងក្រចកពណ៌សយ៉ាងផ្ចិតផ្ចង់។',
-          imageUrl: 'https://images.unsplash.com/photo-1583001931096-959e9a1a6223?auto=format&fit=crop&w=600&q=80',
-          isActive: true
-        }
-      ];
-
-      for (const d of defaults) {
-        await this.create(d);
-      }
-      console.log('[Supabase Database] Pre-seeded 6 default fingernail services.');
-    }
   }
 };
 

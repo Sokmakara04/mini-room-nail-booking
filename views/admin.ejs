@@ -216,6 +216,12 @@
             </button>
           </li>
           <li class="nav-item">
+            <button class="nav-link <%= activeTab === 'groups' ? 'active' : '' %>" id="groups-tab"
+              data-bs-toggle="tab" data-bs-target="#groups-pane" type="button">
+              📁 Service Groups (<%= (typeof serviceGroups !== 'undefined' && serviceGroups) ? serviceGroups.length : 0 %>)
+            </button>
+          </li>
+          <li class="nav-item">
             <button class="nav-link <%= activeTab === 'schedule' ? 'active' : '' %>" id="schedule-tab"
               data-bs-toggle="tab" data-bs-target="#schedule-pane" type="button">
               ⚙️ Salon Schedule & Hours
@@ -598,23 +604,32 @@
 
           <!-- TAB 2: FINGERNAIL SERVICES CRUD -->
           <div class="tab-pane fade <%= activeTab === 'services' ? 'show active' : '' %>" id="services-pane">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
               <div>
                 <h4 class="fw-bold mb-0">Fingernail Services Catalog</h4>
-                <p class="text-secondary small mb-0">Manage services, prices, durations, and active status.</p>
+                <p class="text-secondary small mb-0">Manage services, prices, durations, active status, and group assignments.</p>
               </div>
-              <button type="button" class="btn-nail btn-sm" data-bs-toggle="modal" data-bs-target="#addServiceModal">
-                + Add Nail Service
-              </button>
+              <div class="d-flex align-items-center gap-2">
+                <select id="adminGroupFilter" class="form-select form-select-sm" style="min-width: 200px;">
+                  <option value="all">📁 All Groups (<%= services.length %>)</option>
+                  <% (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).forEach(g => { %>
+                    <option value="<%= g.id %>">📁 <%= g.name %> (<%= g.servicesCount || 0 %>)</option>
+                  <% }) %>
+                </select>
+                <button type="button" class="btn-nail btn-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+                  + Add Nail Service
+                </button>
+              </div>
             </div>
 
             <div class="glass-card p-0 bg-white overflow-hidden shadow-sm">
               <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" id="adminServicesTable">
                   <thead class="table-light small text-uppercase fw-bold">
                     <tr>
                       <th class="ps-3">Service Image & Name</th>
                       <th>Khmer Name</th>
+                      <th>Group</th>
                       <th>Price ($)</th>
                       <th>Duration</th>
                       <th>Status</th>
@@ -622,8 +637,10 @@
                     </tr>
                   </thead>
                   <tbody class="small">
-                    <% services.forEach(s=> { %>
-                      <tr>
+                    <% services.forEach(s=> { 
+                         const currentGrp = (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).find(g => String(g.id) === String(s.groupId));
+                    %>
+                      <tr data-service-group="<%= s.groupId || 'uncategorized' %>">
                         <td class="ps-3">
                           <div class="d-flex align-items-center gap-2">
                             <img
@@ -649,6 +666,11 @@
                           </div>
                         </td>
                         <td>
+                          <span class="badge bg-light text-dark border">
+                            📁 <%= currentGrp ? currentGrp.name : 'Uncategorized' %>
+                          </span>
+                        </td>
+                        <td>
                           <span class="text-danger fw-bold fs-6">$<%= s.price %></span>
                         </td>
                         <td>
@@ -662,8 +684,28 @@
                               <% } %>
                         </td>
                         <td class="text-end pe-3">
+                          <!-- Quick Move Group Dropdown -->
+                          <div class="dropdown d-inline">
+                            <button class="btn btn-sm btn-outline-primary py-1 px-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Move to another group">
+                              Move
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
+                              <li class="dropdown-header text-muted">Move to Group:</li>
+                              <% (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).forEach(g => { %>
+                                <li>
+                                  <form method="post" action="/admin/services/<%= s._id %>/move-group">
+                                    <input type="hidden" name="groupId" value="<%= g.id %>">
+                                    <button type="submit" class="dropdown-item small <%= String(s.groupId) === String(g.id) ? 'active' : '' %>">
+                                      📁 <%= g.name %> (<%= g.nameKm %>)
+                                    </button>
+                                  </form>
+                                </li>
+                              <% }) %>
+                            </ul>
+                          </div>
+
                           <!-- Toggle Active -->
-                          <form method="post" action="/admin/services/<%= s._id %>/toggle" class="d-inline">
+                          <form method="post" action="/admin/services/<%= s._id %>/toggle" class="d-inline ms-1">
                             <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2"
                               title="Toggle active status">
                               <%= s.isActive ? 'Deactivate' : 'Activate' %>
@@ -675,7 +717,8 @@
                             data-bs-toggle="modal" data-bs-target="#editServiceModal" data-id="<%= s._id %>"
                             data-name="<%= s.name %>" data-namekm="<%= s.nameKm %>" data-price="<%= s.price %>"
                             data-duration="<%= s.durationMinutes %>" data-desc="<%= s.description %>"
-                            data-desckm="<%= s.descriptionKm %>" data-image="<%= s.imageUrl %>">
+                            data-desckm="<%= s.descriptionKm %>" data-image="<%= s.imageUrl %>"
+                            data-groupid="<%= s.groupId || '' %>">
                             Edit
                           </button>
 
@@ -687,6 +730,79 @@
                         </td>
                       </tr>
                       <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: SERVICE GROUPS MANAGEMENT -->
+          <div class="tab-pane fade <%= activeTab === 'groups' ? 'show active' : '' %>" id="groups-pane">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h4 class="fw-bold mb-0">Fingernail Service Groups Management</h4>
+                <p class="text-secondary small mb-0">Create, edit, reorder, activate or deactivate service groups synchronized across Customer Web, Telegram Bot, and Admin.</p>
+              </div>
+              <button type="button" class="btn-nail btn-sm" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                + Create New Group
+              </button>
+            </div>
+
+            <div class="glass-card p-0 bg-white overflow-hidden shadow-sm">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light small text-uppercase fw-bold">
+                    <tr>
+                      <th class="ps-3" style="width: 70px;">Order</th>
+                      <th>Group Name (English)</th>
+                      <th>Khmer Name</th>
+                      <th>Description</th>
+                      <th>Assigned Services</th>
+                      <th>Status</th>
+                      <th class="text-end pe-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="small">
+                    <% (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).forEach(g => { %>
+                      <tr>
+                        <td class="ps-3 fw-bold text-muted">#<%= g.displayOrder %></td>
+                        <td>
+                          <strong>📁 <%= g.name %></strong>
+                        </td>
+                        <td>
+                          <strong class="text-dark"><%= g.nameKm %></strong>
+                        </td>
+                        <td>
+                          <div class="text-muted small" style="max-width: 280px;"><%= g.description || '-' %></div>
+                        </td>
+                        <td>
+                          <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-6">
+                            <%= g.servicesCount || 0 %> <%= (g.servicesCount === 1) ? 'service' : 'services' %>
+                          </span>
+                        </td>
+                        <td>
+                          <% if (g.isActive) { %>
+                            <span class="badge bg-success-subtle text-success fw-bold">Active</span>
+                          <% } else { %>
+                            <span class="badge bg-secondary-subtle text-secondary fw-bold">Inactive</span>
+                          <% } %>
+                        </td>
+                        <td class="text-end pe-3">
+                          <form method="post" action="/admin/service-groups/<%= g.id %>/toggle" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Toggle active status">
+                              <%= g.isActive ? 'Deactivate' : 'Activate' %>
+                            </button>
+                          </form>
+                          <button type="button" class="btn btn-sm btn-outline-dark py-1 px-2 ms-1 edit-group-btn"
+                            data-bs-toggle="modal" data-bs-target="#editGroupModal"
+                            data-id="<%= g.id %>" data-name="<%= g.name %>" data-namekm="<%= g.nameKm %>"
+                            data-desc="<%= g.description %>" data-desckm="<%= g.descriptionKm %>"
+                            data-order="<%= g.displayOrder %>">
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    <% }) %>
                   </tbody>
                 </table>
               </div>
@@ -844,6 +960,14 @@
               <textarea name="description" class="form-control" rows="2" placeholder="Brief service details..."></textarea>
             </div>
             <div class="col-12">
+              <label class="form-label small fw-bold">Service Group / Category</label>
+              <select name="groupId" class="form-select" required>
+                <% (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).forEach(g => { %>
+                  <option value="<%= g.id %>">📁 <%= g.name %> (<%= g.nameKm %>)</option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="col-12">
               <label class="form-label small fw-bold">Description (Khmer / ខ្មែរ)</label>
               <textarea name="descriptionKm" class="form-control" rows="2" placeholder="ព័ត៌មានលម្អិតពីសេវាកម្មជាភាសាខ្មែរ..."></textarea>
             </div>
@@ -936,6 +1060,14 @@
               <textarea id="editServiceDesc" name="description" class="form-control" rows="2"></textarea>
             </div>
             <div class="col-12">
+              <label class="form-label small fw-bold">Service Group / Category</label>
+              <select id="editServiceGroupId" name="groupId" class="form-select" required>
+                <% (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).forEach(g => { %>
+                  <option value="<%= g.id %>">📁 <%= g.name %> (<%= g.nameKm %>)</option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="col-12">
               <label class="form-label small fw-bold">Description (Khmer / ខ្មែរ)</label>
               <textarea id="editServiceDescKm" name="descriptionKm" class="form-control" rows="2"></textarea>
             </div>
@@ -995,6 +1127,86 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
             <button type="submit" class="btn-nail btn-sm">Update Service</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD SERVICE GROUP -->
+  <div class="modal fade" id="addGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" action="/admin/service-groups">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">📁 Create Fingernail Service Group</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body row g-3">
+            <div class="col-md-7">
+              <label class="form-label small fw-bold">Group Name (English)</label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. Gel Polish" required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-bold">Display Order</label>
+              <input type="number" name="displayOrder" class="form-control" min="1" value="1" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold">Group Name (Khmer / ខ្មែរ)</label>
+              <input type="text" name="nameKm" class="form-control" placeholder="e.g. លាបពណ៌ជែល" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold">Description (English)</label>
+              <textarea name="description" class="form-control" rows="2" placeholder="Brief details about services in this group..."></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold">Description (Khmer / ខ្មែរ)</label>
+              <textarea name="descriptionKm" class="form-control" rows="2" placeholder="ព័ត៌មានលម្អិតពីផ្នែកសេវាកម្មនេះជាភាសាខ្មែរ..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn-nail btn-sm">Save Group</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT SERVICE GROUP -->
+  <div class="modal fade" id="editGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="editGroupForm" method="post" action="">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">✏️ Edit Fingernail Service Group</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body row g-3">
+            <div class="col-md-7">
+              <label class="form-label small fw-bold">Group Name (English)</label>
+              <input type="text" id="editGroupName" name="name" class="form-control" required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-bold">Display Order</label>
+              <input type="number" id="editGroupOrder" name="displayOrder" class="form-control" min="1" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold">Group Name (Khmer / ខ្មែរ)</label>
+              <input type="text" id="editGroupNameKm" name="nameKm" class="form-control" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold">Description (English)</label>
+              <textarea id="editGroupDesc" name="description" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold">Description (Khmer / ខ្មែរ)</label>
+              <textarea id="editGroupDescKm" name="descriptionKm" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn-nail btn-sm">Update Group</button>
           </div>
         </form>
       </div>
@@ -1269,6 +1481,11 @@
         document.getElementById('editServiceDesc').value = button.getAttribute('data-desc') || '';
         document.getElementById('editServiceDescKm').value = button.getAttribute('data-desckm') || '';
         document.getElementById('editServiceImage').value = existingImage;
+        const serviceGroupId = button.getAttribute('data-groupid');
+        const grpSelect = document.getElementById('editServiceGroupId');
+        if (grpSelect && serviceGroupId) {
+          grpSelect.value = serviceGroupId;
+        }
 
         // Reset upload state
         document.getElementById('editUploadedImageUrl').value = '';
@@ -1305,6 +1522,37 @@
         document.getElementById('editCurrentImageWrap').style.display = 'none';
         document.getElementById('editUrlPreviewWrap').style.display = 'none';
         switchImageMode('edit', 'url');
+      });
+    }
+
+    // Edit Group Modal Population
+    const editGroupModal = document.getElementById('editGroupModal');
+    if (editGroupModal) {
+      editGroupModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const id = button.getAttribute('data-id');
+        document.getElementById('editGroupForm').action = `/admin/service-groups/${id}/update`;
+        document.getElementById('editGroupName').value = button.getAttribute('data-name') || '';
+        document.getElementById('editGroupNameKm').value = button.getAttribute('data-namekm') || '';
+        document.getElementById('editGroupOrder').value = button.getAttribute('data-order') || '1';
+        document.getElementById('editGroupDesc').value = button.getAttribute('data-desc') || '';
+        document.getElementById('editGroupDescKm').value = button.getAttribute('data-desckm') || '';
+      });
+    }
+
+    // Real-time Service Group Table Filter in Admin Dashboard
+    const adminGroupFilter = document.getElementById('adminGroupFilter');
+    if (adminGroupFilter) {
+      adminGroupFilter.addEventListener('change', function () {
+        const selectedGroup = this.value;
+        const rows = document.querySelectorAll('#adminServicesTable tbody tr');
+        rows.forEach(row => {
+          if (selectedGroup === 'all' || row.getAttribute('data-service-group') === selectedGroup) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
       });
     }
 

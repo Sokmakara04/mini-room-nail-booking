@@ -8,6 +8,56 @@
   <link rel="shortcut icon" href="/favicon.ico">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
+  <style>
+    .cat-pill {
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      color: #334155;
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .cat-pill:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+    .cat-pill.active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    }
+    .cat-pill .badge {
+      font-size: 0.75rem;
+      border-radius: 9999px;
+      padding: 0.25em 0.6em;
+    }
+    .cat-pill.active .badge {
+      background: #334155 !important;
+      color: #ffffff !important;
+    }
+    .cat-nav-wrapper {
+      overflow-x: auto;
+      scrollbar-width: thin;
+      padding-bottom: 0.5rem;
+    }
+    .cat-nav-wrapper::-webkit-scrollbar {
+      height: 4px;
+    }
+    .cat-nav-wrapper::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
   <nav class="salon-nav">
@@ -35,33 +85,82 @@
   </nav>
 
   <main class="container py-5">
-    <div class="text-center max-w-700 mx-auto mb-5">
+    <div class="text-center max-w-700 mx-auto mb-4">
       <span class="hero-eyebrow">💅 <%= lang === 'km' ? 'តារាងសេវាកម្មក្រចកដៃផ្តាច់មុខ' : 'FINGERNAIL SERVICES ONLY' %></span>
       <h1 class="fw-bold mt-2"><%= lang === 'km' ? 'សេវាកម្មថែទាំនិងរចនាម៉ូដក្រចកដៃ' : 'Signature Fingernail Services' %></h1>
       <p class="text-secondary"><%= lang === 'km' ? 'គ្រប់សេវាកម្មទាំងអស់ត្រូវបានបម្រើដោយជាងជំនាញ ជាមួយសម្ភារៈគ្មានជាតិពុល និងអនាម័យខ្ពស់បំផុត។' : 'Expert care for your hands and nails. We specialize only in premium fingernail treatments and hand care.' %></p>
     </div>
 
-    <div class="row g-4">
-      <% services.forEach(s => { %>
-        <div class="col-md-6 col-lg-4">
-          <div class="service-card">
-            <div class="service-img-wrap">
-              <img src="<%= s.imageUrl || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=600&q=80' %>" alt="<%= s.name %>">
-              <span class="service-price-badge">$<%= s.price %></span>
+    <!-- Category Filter Navigation -->
+    <div class="cat-nav-wrapper mb-5">
+      <div class="d-flex align-items-center gap-2 flex-nowrap flex-md-wrap justify-content-start justify-content-md-center">
+        <button type="button" class="cat-pill active" data-filter="all">
+          <span>✨ <%= lang === 'km' ? 'ទាំងអស់' : 'All Services' %></span>
+          <span class="badge bg-secondary-subtle text-dark"><%= services.length %></span>
+        </button>
+        <% (serviceGroups || []).forEach(g => { 
+             const groupCount = services.filter(s => String(s.groupId) === String(g.id)).length;
+             if (groupCount > 0) {
+        %>
+          <button type="button" class="cat-pill" data-filter="<%= g.id %>">
+            <span><%= lang === 'km' ? g.nameKm : g.name %></span>
+            <span class="badge bg-secondary-subtle text-dark"><%= groupCount %></span>
+          </button>
+        <% } }) %>
+      </div>
+    </div>
+
+    <!-- Grouped Services List -->
+    <div id="serviceGroupsContainer">
+      <% 
+        const groupsToDisplay = (serviceGroups && serviceGroups.length > 0) 
+          ? serviceGroups.filter(g => services.some(s => String(s.groupId) === String(g.id)))
+          : [{ id: 'grp-all', name: 'All Services', nameKm: 'សេវាកម្មទាំងអស់' }];
+
+        groupsToDisplay.forEach(g => {
+          const groupServices = services.filter(s => String(s.groupId) === String(g.id));
+          if (groupServices.length > 0) {
+      %>
+        <section class="service-group-section mb-5" data-group="<%= g.id %>" id="group-<%= g.id %>">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4 pb-2 border-bottom">
+            <div>
+              <h2 class="h4 fw-bold mb-1 text-dark">
+                💅 <%= lang === 'km' ? g.nameKm : g.name %>
+                <span class="text-secondary small fw-normal ms-1">(<%= lang === 'km' ? g.name : g.nameKm %>)</span>
+              </h2>
+              <% if (g.description || g.descriptionKm) { %>
+                <p class="text-secondary small mb-0"><%= lang === 'km' ? (g.descriptionKm || g.description) : (g.description || g.descriptionKm) %></p>
+              <% } %>
             </div>
-            <div class="service-body">
-              <h2 class="service-title h4"><%= lang === 'km' ? s.nameKm : s.name %></h2>
-              <div class="service-duration">
-                ⏱️ <%= s.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>
-              </div>
-              <p class="service-desc"><%= lang === 'km' ? (s.descriptionKm || s.description) : (s.description || s.descriptionKm) %></p>
-              <a href="/book?serviceId=<%= s._id %>" class="btn-nail w-100 mt-auto">
-                📅 <%= lang === 'km' ? 'កក់សេវាកម្មនេះ' : 'Book This Service' %>
-              </a>
-            </div>
+            <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">
+              <%= groupServices.length %> <%= lang === 'km' ? 'សេវាកម្ម' : 'items' %>
+            </span>
           </div>
-        </div>
-      <% }) %>
+
+          <div class="row g-4">
+            <% groupServices.forEach(s => { %>
+              <div class="col-md-6 col-lg-4 service-card-col">
+                <div class="service-card h-100 d-flex flex-column">
+                  <div class="service-img-wrap">
+                    <img src="<%= s.imageUrl || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=600&q=80' %>" alt="<%= s.name %>">
+                    <span class="service-price-badge">$<%= s.price %></span>
+                  </div>
+                  <div class="service-body d-flex flex-column flex-grow-1">
+                    <h3 class="service-title h4"><%= lang === 'km' ? s.nameKm : s.name %></h3>
+                    <div class="service-duration mb-2">
+                      ⏱️ <%= s.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>
+                    </div>
+                    <p class="service-desc flex-grow-1"><%= lang === 'km' ? (s.descriptionKm || s.description) : (s.description || s.descriptionKm) %></p>
+                    <a href="/book?serviceId=<%= s._id %>" class="btn-nail w-100 mt-3">
+                      📅 <%= lang === 'km' ? 'កក់សេវាកម្មនេះ' : 'Book This Service' %>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </section>
+      <% } }) %>
     </div>
   </main>
 
@@ -74,5 +173,25 @@
       </p>
     </div>
   </footer>
+
+  <script>
+    document.querySelectorAll('.cat-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filter = btn.getAttribute('data-filter');
+        const sections = document.querySelectorAll('.service-group-section');
+
+        sections.forEach(sec => {
+          if (filter === 'all' || sec.getAttribute('data-group') === filter) {
+            sec.style.display = 'block';
+          } else {
+            sec.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
 </body>
 </html>

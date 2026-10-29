@@ -7,6 +7,7 @@ const multer = require('multer');
 
 // Models & Utilities
 const Service = require('./models/Service');
+const ServiceGroup = require('./models/ServiceGroup');
 const SalonSetting = require('./models/SalonSetting');
 const Booking = require('./models/Booking');
 const User = require('./models/User');
@@ -255,11 +256,13 @@ app.get('/services', async (req, res) => {
   try {
     const lang = getLang(req);
     const settings = await SalonSetting.getSettings();
+    const serviceGroups = await ServiceGroup.find({ isActive: true });
     const services = await Service.find({ isActive: true, category: 'fingernail' }).sort({ price: 1 }).lean();
     res.render('services', {
       salonName: settings.salonName || SALON_NAME,
       settings,
       services,
+      serviceGroups,
       lang
     });
   } catch (err) {
@@ -273,6 +276,7 @@ app.get('/book', async (req, res) => {
   try {
     const lang = getLang(req);
     const settings = await SalonSetting.getSettings();
+    const serviceGroups = await ServiceGroup.find({ isActive: true });
     const services = await Service.find({ isActive: true, category: 'fingernail' }).sort({ price: 1 }).lean();
     const today = getLocalToday();
 
@@ -280,6 +284,7 @@ app.get('/book', async (req, res) => {
       salonName: settings.salonName || SALON_NAME,
       settings,
       services,
+      serviceGroups,
       selectedServiceId: req.query.serviceId || '',
       today,
       lang
@@ -534,6 +539,10 @@ app.get('/admin', adminAuth, async (req, res) => {
     }
 
     const services = await Service.find({ category: 'fingernail' }).sort({ price: 1 }).lean();
+    const serviceGroups = await ServiceGroup.find();
+    serviceGroups.forEach(g => {
+      g.servicesCount = services.filter(s => String(s.groupId) === String(g.id)).length;
+    });
     const settings = await SalonSetting.getSettings();
 
     // Statistics
@@ -546,6 +555,7 @@ app.get('/admin', adminAuth, async (req, res) => {
       salonName: settings.salonName || SALON_NAME,
       bookings,
       services,
+      serviceGroups,
       settings,
       today,
       end7Days,
@@ -968,7 +978,7 @@ app.post('/admin/services/upload-image', adminAuth, (req, res) => {
 // Add Fingernail Service
 app.post('/admin/services', adminAuth, async (req, res) => {
   try {
-    const { name, nameKm, price, durationMinutes, description, descriptionKm, imageUrl, uploadedImageUrl } = req.body;
+    const { name, nameKm, price, durationMinutes, description, descriptionKm, imageUrl, uploadedImageUrl, groupId } = req.body;
     if (!name?.trim() || !nameKm?.trim() || isNaN(price) || isNaN(durationMinutes)) {
       return res.redirect('/admin?tab=services&type=danger&msg=Please fill in all service details.');
     }
@@ -985,6 +995,7 @@ app.post('/admin/services', adminAuth, async (req, res) => {
       descriptionKm: descriptionKm?.trim() || '',
       imageUrl: finalImageUrl,
       category: 'fingernail',
+      groupId: groupId?.trim() || undefined,
       isActive: true
     });
 
@@ -998,7 +1009,7 @@ app.post('/admin/services', adminAuth, async (req, res) => {
 // Update Fingernail Service
 app.post('/admin/services/:id/update', adminAuth, async (req, res) => {
   try {
-    const { name, nameKm, price, durationMinutes, description, descriptionKm, imageUrl, uploadedImageUrl } = req.body;
+    const { name, nameKm, price, durationMinutes, description, descriptionKm, imageUrl, uploadedImageUrl, groupId } = req.body;
 
     // Resolve final image URL: uploaded file takes priority over pasted URL
     const finalImageUrl = (uploadedImageUrl?.trim() || imageUrl?.trim() || '').trim();
@@ -1010,13 +1021,88 @@ app.post('/admin/services/:id/update', adminAuth, async (req, res) => {
       durationMinutes: Number(durationMinutes),
       description: description?.trim() || '',
       descriptionKm: descriptionKm?.trim() || '',
-      imageUrl: finalImageUrl
+      imageUrl: finalImageUrl,
+      groupId: groupId?.trim() || undefined
     });
 
     res.redirect('/admin?tab=services&type=success&msg=' + encodeURIComponent('Service updated successfully.'));
   } catch (err) {
     console.error('Update service error:', err);
     res.redirect('/admin?tab=services&type=danger&msg=' + encodeURIComponent('Failed to update service.'));
+  }
+});
+
+// Move Service to Another Group
+app.post('/admin/services/:id/move-group', adminAuth, async (req, res) => {
+  try {
+    const { groupId } = req.body;
+    if (!groupId) {
+      return res.redirect('/admin?tab=services&type=danger&msg=' + encodeURIComponent('Destination group is required.'));
+    }
+    const targetGroup = await ServiceGroup.findById(groupId);
+    if (!targetGroup) {
+      return res.redirect('/admin?tab=services&type=danger&msg=' + encodeURIComponent('Selected service group does not exist.'));
+    }
+    await Service.moveToGroup(req.params.id, groupId);
+    res.redirect('/admin?tab=services&type=success&msg=' + encodeURIComponent(`Service moved to "${targetGroup.name}" successfully.`));
+  } catch (err) {
+    console.error('Move service group error:', err);
+    res.redirect('/admin?tab=services&type=danger&msg=' + encodeURIComponent('Failed to move service group.'));
+  }
+});
+
+// Create Service Group
+app.post('/admin/service-groups', adminAuth, async (req, res) => {
+  try {
+    const { name, nameKm, description, descriptionKm, displayOrder } = req.body;
+    if (!name?.trim()) {
+      return res.redirect('/admin?tab=groups&type=danger&msg=' + encodeURIComponent('Group English name is required.'));
+    }
+    await ServiceGroup.create({
+      name: name.trim(),
+      nameKm: nameKm?.trim() || name.trim(),
+      description: description?.trim() || '',
+      descriptionKm: descriptionKm?.trim() || '',
+      displayOrder: Number(displayOrder || 99),
+      isActive: true
+    });
+    res.redirect('/admin?tab=groups&type=success&msg=' + encodeURIComponent('New service group created successfully.'));
+  } catch (err) {
+    console.error('Create service group error:', err);
+    res.redirect('/admin?tab=groups&type=danger&msg=' + encodeURIComponent('Failed to create service group.'));
+  }
+});
+
+// Update Service Group
+app.post('/admin/service-groups/:id/update', adminAuth, async (req, res) => {
+  try {
+    const { name, nameKm, description, descriptionKm, displayOrder } = req.body;
+    if (!name?.trim()) {
+      return res.redirect('/admin?tab=groups&type=danger&msg=' + encodeURIComponent('Group English name is required.'));
+    }
+    await ServiceGroup.findByIdAndUpdate(req.params.id, {
+      name: name.trim(),
+      nameKm: nameKm?.trim() || name.trim(),
+      description: description?.trim() || '',
+      descriptionKm: descriptionKm?.trim() || '',
+      displayOrder: Number(displayOrder || 0)
+    });
+    res.redirect('/admin?tab=groups&type=success&msg=' + encodeURIComponent('Service group updated successfully.'));
+  } catch (err) {
+    console.error('Update service group error:', err);
+    res.redirect('/admin?tab=groups&type=danger&msg=' + encodeURIComponent('Failed to update service group.'));
+  }
+});
+
+// Toggle Service Group Active Status
+app.post('/admin/service-groups/:id/toggle', adminAuth, async (req, res) => {
+  try {
+    const updated = await ServiceGroup.toggleActive(req.params.id);
+    const statusText = updated?.isActive ? 'activated' : 'deactivated';
+    res.redirect('/admin?tab=groups&type=success&msg=' + encodeURIComponent(`Service group ${statusText} successfully.`));
+  } catch (err) {
+    console.error('Toggle service group error:', err);
+    res.redirect('/admin?tab=groups&type=danger&msg=' + encodeURIComponent('Failed to toggle group status.'));
   }
 });
 
