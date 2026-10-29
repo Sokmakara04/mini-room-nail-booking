@@ -1,6 +1,19 @@
+import { createClient } from '@supabase/supabase-js';
+
 // ==============================================================================
 // DATABASE HELPER LAYER (Supabase via REST on Cloudflare Workers)
 // ==============================================================================
+
+export function getSupabase(env) {
+  const url = (env.SUPABASE_URL || '').trim();
+  const key = (env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_KEY || '').trim();
+  return createClient(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
+}
 
 export const DEFAULT_BOT_GROUPS = [
   { id: 'grp-basic-manicure', name: 'Basic Manicure & Care', nameKm: 'ថែទាំនិងសម្អាតក្រចក', displayOrder: 1, isActive: true },
@@ -45,9 +58,18 @@ export const DEFAULT_BOT_SERVICE_MAP = {
   '0cdefb63-b4d5-4976-bc7d-fac991b89706': 'grp-nail-repair'
 };
 
-function resolveServiceGroupId(s) {
+let runtimeServiceGroupOverrides = {};
+
+export function setServiceGroupOverride(serviceId, groupId) {
+  if (serviceId) {
+    runtimeServiceGroupOverrides[String(serviceId)] = String(groupId);
+  }
+}
+
+export function resolveServiceGroupId(s) {
   if (s.group_id) return String(s.group_id);
   const id = String(s.id);
+  if (runtimeServiceGroupOverrides[id]) return runtimeServiceGroupOverrides[id];
   if (DEFAULT_BOT_SERVICE_MAP[id]) return DEFAULT_BOT_SERVICE_MAP[id];
   const name = (s.name || '').toLowerCase();
   if (name.includes('remove')) return 'grp-nail-removal';
@@ -105,6 +127,22 @@ export async function getServiceGroupById(supabase, groupId) {
 
   const fallback = DEFAULT_BOT_GROUPS.find(g => g.id === cleanId);
   return fallback || null;
+}
+
+export async function isServiceAndGroupActive(supabase, serviceId) {
+  if (!serviceId) return { valid: false, reason: 'service_not_found', service: null, group: null };
+  const service = await getServiceById(supabase, serviceId);
+  if (!service || !service.isActive) {
+    return { valid: false, reason: 'service_inactive', service: null, group: null };
+  }
+  if (service.groupId) {
+    const group = await getServiceGroupById(supabase, service.groupId);
+    if (group && !group.isActive) {
+      return { valid: false, reason: 'group_inactive', service, group };
+    }
+    return { valid: true, service, group };
+  }
+  return { valid: true, service, group: null };
 }
 
 export async function getSalonSettings(supabase, fallbackName = 'Mini Room Nail & Eyelash') {
@@ -247,6 +285,35 @@ export async function createBooking(supabase, bookingData) {
   };
 }
 
+export async function findBookingById(supabase, id) {
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('id', String(id))
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return {
+    _id: String(data.id),
+    id: String(data.id),
+    bookingReference: data.booking_reference,
+    customerName: data.customer_name,
+    phone: data.phone,
+    service: data.service,
+    serviceKm: data.service_km,
+    price: Number(data.price),
+    durationMinutes: Number(data.duration_minutes),
+    date: data.date,
+    time: data.time,
+    endTime: data.end_time,
+    status: data.status,
+    notes: data.notes || '',
+    telegramId: data.telegram_id,
+    source: data.source
+  };
+}
+
 export async function findBookingByReference(supabase, ref) {
   if (!ref) return null;
   const { data, error } = await supabase
@@ -361,4 +428,18 @@ export async function findBookingsForDate(supabase, dateStr) {
     endTime: b.end_time,
     status: b.status
   }));
+}
+
+export async function logNotification(supabase, notifData) {
+  try {
+    await supabase.from('notifications').insert([{
+      booking_id: notifData.bookingId,
+      recipient: String(notifData.recipient),
+      channel: notifData.channel || 'telegram',
+      message: notifData.message,
+      status: notifData.status || 'sent'
+    }]);
+  } catch (err) {
+    console.error('[Supabase logNotification Error]:', err?.message || err);
+  }
 }

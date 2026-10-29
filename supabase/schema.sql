@@ -39,7 +39,30 @@ CREATE TRIGGER trg_users_updated_at
   EXECUTE FUNCTION set_updated_at();
 
 -- ==============================================================================
--- 4. TABLE: services (Fingernail Services & Treatments)
+-- 4. TABLE: service_groups (Categorization for Fingernail Services)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS service_groups (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  name VARCHAR(150) NOT NULL,
+  name_km VARCHAR(200) NOT NULL,
+  description TEXT DEFAULT '',
+  description_km TEXT DEFAULT '',
+  display_order INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS trg_service_groups_updated_at ON service_groups;
+CREATE TRIGGER trg_service_groups_updated_at
+  BEFORE UPDATE ON service_groups
+  FOR EACH ROW
+  EXECUTE FUNCTION set_updated_at();
+
+CREATE INDEX IF NOT EXISTS idx_service_groups_active_order ON service_groups (is_active, display_order);
+
+-- ==============================================================================
+-- 5. TABLE: services (Fingernail Services & Treatments)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS services (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -51,6 +74,7 @@ CREATE TABLE IF NOT EXISTS services (
   description_km TEXT DEFAULT '',
   image_url TEXT DEFAULT '',
   category VARCHAR(50) NOT NULL DEFAULT 'fingernail',
+  group_id TEXT REFERENCES service_groups(id) ON DELETE SET NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -63,6 +87,7 @@ CREATE TRIGGER trg_services_updated_at
   EXECUTE FUNCTION set_updated_at();
 
 CREATE INDEX IF NOT EXISTS idx_services_active_category ON services (is_active, category);
+CREATE INDEX IF NOT EXISTS idx_services_group_id ON services (group_id);
 
 -- ==============================================================================
 -- 5. TABLE: salon_settings (Salon Hours, Capacity & Booking Rules)
@@ -170,11 +195,19 @@ CREATE INDEX IF NOT EXISTS idx_notifications_booking ON notifications (booking_i
 -- Public anon key access is restricted to protect sensitive customer data.
 
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE service_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE salon_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+-- Service Groups: Allow public read access to active service groups
+DROP POLICY IF EXISTS "Public can view active service groups" ON service_groups;
+CREATE POLICY "Public can view active service groups"
+  ON service_groups FOR SELECT
+  TO anon, authenticated
+  USING (is_active = TRUE);
 
 -- Services: Allow public read access to active services so visitors can view catalog
 DROP POLICY IF EXISTS "Public can view active services" ON services;
@@ -214,8 +247,26 @@ SELECT
   2
 WHERE NOT EXISTS (SELECT 1 FROM salon_settings);
 
+-- Seed canonical fingernail service groups
+INSERT INTO service_groups (id, name, name_km, description, description_km, display_order, is_active)
+VALUES
+  ('grp-basic-manicure', 'Basic Manicure & Care', 'ថែទាំនិងសម្អាតក្រចក', 'Essential fingernail care, cuticle trimming, shaping, hand and feet spa treatments.', 'សេវាកម្មថែទាំនិងកាត់សម្អាតក្រចក ម៉ាស្សា និងស្ក្រាប់ដៃជើងបំប៉នសុខភាពក្រចក។', 1, TRUE),
+  ('grp-gel-polish', 'Gel Polish', 'លាបពណ៌ជែល', 'Solid gel, syrup gel, cat-eye, and French ombre gel polish treatments.', 'លាបពណ៌ជែលម្សៅ ជែលថ្លា ជែលឆក់ និងម៉ូដ French / Ombre ភ្លឺរលោងជាប់បានយូរ។', 2, TRUE),
+  ('grp-nail-extensions', 'Nail Extensions & Overlay', 'តនិងអប់ក្រចក', 'Full nail extensions, builder gel overlay, and flawless nail length enhancements.', 'តប្រវែងក្រចកដៃដោយជែល អប់ជែល និងបិតក្រចកពេញដើម្បីរាងក្រចករឹងមាំស្រស់ស្អាត។', 3, TRUE),
+  ('grp-nail-art', 'Nail Art & Design', 'ម៉ូដនិងសិល្បៈក្រចក', 'Custom hand-painted nail art, minimalist lines, 3D characters, flowers, and chrome isolation.', 'គូរម៉ូដសិល្បៈក្រចកដៃ រចនាក្បាច់ 3D ផ្កាប៉ោង ត្រាស៊ីលីកូន និង Chrome ប្លែកទាន់សម័យ។', 4, TRUE),
+  ('grp-nail-removal', 'Nail Removal', 'ដោះក្រចកជែលនិងម្សៅ', 'Gentle and damage-free removal of gel polish, overlay, gel extensions, and acrylic nails.', 'ដោះថ្នាំជែលចាស់ អប់ជែល តជែល និងម្សៅចេញដោយសុវត្ថិភាព មិនប៉ះពាល់ដល់ក្រចកធម្មជាតិ។', 5, TRUE),
+  ('grp-nail-repair', 'Nail Repair & Maintenance', 'ជួសជុលនិងថែទាំក្រចក', 'Fix broken fingernails, refills for gel extensions, overlays, and gel x maintenance.', 'កែក្រចកបាក់ ឬខូច និងបំពេញបន្ថែម (Refill) សម្រាប់ក្រចកតជែល អប់ជែល និង Gel X។', 6, TRUE),
+  ('grp-packages', 'Packages & Promotions', 'កញ្ចប់សេវាកម្មនិងប្រូម៉ូសិន', 'Bundled salon packages and special promotional offers.', 'កញ្ចប់សេវាកម្មរួមបញ្ចូលគ្នា និងការផ្តល់ជូនពិសេសពីហាង។', 7, TRUE)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  name_km = EXCLUDED.name_km,
+  description = EXCLUDED.description,
+  description_km = EXCLUDED.description_km,
+  display_order = EXCLUDED.display_order,
+  is_active = EXCLUDED.is_active;
+
 -- Seed default fingernail services if services table is empty
-INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, is_active)
+INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, group_id, is_active)
 SELECT
   'svc-basic-manicure',
   'Basic Manicure',
@@ -226,10 +277,11 @@ SELECT
   'កាត់តម្រឹមរាងក្រចក សម្អាតគល់ក្រចក និងម៉ាស្សាបាតដៃយ៉ាងទន់ភ្លន់។',
   'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=600&q=80',
   'fingernail',
+  'grp-basic-manicure',
   TRUE
-WHERE NOT EXISTS (SELECT 1 FROM services WHERE name = 'Basic Manicure');
+WHERE NOT EXISTS (SELECT 1 FROM services WHERE id = 'svc-basic-manicure');
 
-INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, is_active)
+INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, group_id, is_active)
 SELECT
   'svc-gel-polish',
   'Gel Nail Polish',
@@ -240,10 +292,11 @@ SELECT
   'លាបថ្នាំជែលជាប់បានយូរ ភ្លឺរលោងស្អាត និងស្ងួតឆាប់រហ័សដោយពន្លឺ UV-LED។',
   'https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=600&q=80',
   'fingernail',
+  'grp-gel-polish',
   TRUE
-WHERE NOT EXISTS (SELECT 1 FROM services WHERE name = 'Gel Nail Polish');
+WHERE NOT EXISTS (SELECT 1 FROM services WHERE id = 'svc-gel-polish');
 
-INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, is_active)
+INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, group_id, is_active)
 SELECT
   'svc-nail-art',
   'Nail Art Design',
@@ -254,10 +307,11 @@ SELECT
   'គូរម៉ូដសិល្បៈក្រចកដៃតាមចំណូលចិត្ត ក្បាច់រចនាស្អាតប្លែក និងទាន់សម័យ។',
   'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&w=600&q=80',
   'fingernail',
+  'grp-nail-art',
   TRUE
-WHERE NOT EXISTS (SELECT 1 FROM services WHERE name = 'Nail Art Design');
+WHERE NOT EXISTS (SELECT 1 FROM services WHERE id = 'svc-nail-art');
 
-INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, is_active)
+INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, group_id, is_active)
 SELECT
   'svc-nail-extensions',
   'Nail Extensions (Gel / Acrylic)',
@@ -268,10 +322,11 @@ SELECT
   'តប្រវែងក្រចកដៃឱ្យស្រស់ស្អាត រឹងមាំ និងរាងសមសួនទាក់ទាញ។',
   'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80',
   'fingernail',
+  'grp-nail-extensions',
   TRUE
-WHERE NOT EXISTS (SELECT 1 FROM services WHERE name = 'Nail Extensions (Gel / Acrylic)');
+WHERE NOT EXISTS (SELECT 1 FROM services WHERE id = 'svc-nail-extensions');
 
-INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, is_active)
+INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, group_id, is_active)
 SELECT
   'svc-gel-removal',
   'Gel Removal & Care',
@@ -282,10 +337,11 @@ SELECT
   'ដោះថ្នាំជែលចាស់ចេញដោយមិនប៉ះពាល់ក្រចក រួមជាមួយការបំប៉នប្រេងខេរ៉ាទីន។',
   'https://images.unsplash.com/photo-1599839575945-a9e5af0c3fa5?auto=format&fit=crop&w=600&q=80',
   'fingernail',
+  'grp-nail-removal',
   TRUE
-WHERE NOT EXISTS (SELECT 1 FROM services WHERE name = 'Gel Removal & Care');
+WHERE NOT EXISTS (SELECT 1 FROM services WHERE id = 'svc-gel-removal');
 
-INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, is_active)
+INSERT INTO services (id, name, name_km, price, duration_minutes, description, description_km, image_url, category, group_id, is_active)
 SELECT
   'svc-french-manicure',
   'French Manicure Tips',
@@ -296,5 +352,6 @@ SELECT
   'រចនាបែបបារាំងបុរាណ គល់ផ្កាឈូកធម្មជាតិ និងចុងក្រចកពណ៌សយ៉ាងផ្ចិតផ្ចង់។',
   'https://images.unsplash.com/photo-1583001931096-959e9a1a6223?auto=format&fit=crop&w=600&q=80',
   'fingernail',
+  'grp-basic-manicure',
   TRUE
-WHERE NOT EXISTS (SELECT 1 FROM services WHERE name = 'French Manicure Tips');
+WHERE NOT EXISTS (SELECT 1 FROM services WHERE id = 'svc-french-manicure');

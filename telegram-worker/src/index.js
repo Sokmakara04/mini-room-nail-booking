@@ -15,6 +15,7 @@ import {
   getServiceGroupById,
   getActiveServices,
   getServiceById,
+  isServiceAndGroupActive,
   createBooking,
   findBookingById,
   updateBookingStatus,
@@ -51,6 +52,46 @@ function cleanOldSessions() {
     }
   }
 }
+
+// ==============================================================================
+// SERVICE GROUP PRESENTATION HELPERS
+// ==============================================================================
+
+function getGroupEmoji(groupId, groupName = '') {
+  const id = String(groupId || '').toLowerCase();
+  const name = String(groupName || '').toLowerCase();
+  if (id.includes('manicure') || id.includes('care') || name.includes('care') || name.includes('cuticle') || name.includes('សម្អាត')) return '💅';
+  if (id.includes('gel-polish') || id.includes('polish') || name.includes('gel') || name.includes('color') || name.includes('ជែល')) return '✨';
+  if (id.includes('extension') || id.includes('overlay') || name.includes('extension') || name.includes('overlay') || name.includes('ត') || name.includes('អប់')) return '💎';
+  if (id.includes('art') || id.includes('design') || name.includes('art') || name.includes('design') || name.includes('ម៉ូដ')) return '🎨';
+  if (id.includes('removal') || id.includes('remove') || name.includes('remove') || name.includes('ដោះ')) return '🧴';
+  if (id.includes('repair') || id.includes('refill') || name.includes('repair') || name.includes('refill') || name.includes('ជួសជុល')) return '🛠️';
+  if (id.includes('package') || id.includes('promo') || name.includes('package') || name.includes('promo') || name.includes('កញ្ចប់')) return '🎁';
+  return '💅';
+}
+
+function formatGroupButtonLabel(group, lang = 'en') {
+  const km = (group.nameKm || '').trim();
+  const en = (group.name || '').trim();
+  if (lang === 'km') {
+    if (km && en && km !== en) return `${km} (${en})`;
+    return km || en;
+  }
+  if (en && km && en !== km) return `${en} (${km})`;
+  return en || km;
+}
+
+function formatGroupHeaderTitle(group, lang = 'en') {
+  const km = (group.nameKm || '').trim();
+  const en = (group.name || '').trim();
+  if (lang === 'km') {
+    if (km && en && km !== en) return `${km} (${en})`;
+    return km || en;
+  }
+  if (en && km && en !== km) return `${en} (${km})`;
+  return en || km;
+}
+
 
 // ==============================================================================
 // TELEGRAM BOT API CLIENT (Direct Web Standards fetch)
@@ -297,15 +338,19 @@ async function handleUpdate(update, env) {
 
         const buttons = validGroups.map(g => {
           const count = allServices.filter(s => String(s.groupId) === String(g.id)).length;
-          const label = lang === 'km' && g.nameKm ? g.nameKm : g.name;
+          const emoji = getGroupEmoji(g.id, g.name);
+          const label = formatGroupButtonLabel(g, lang);
           return [{
-            text: `📁 ${label} (${count})`,
+            text: `${emoji} ${label} (${count})`,
             callback_data: `grp:${g.id}:${lang}:0`
           }];
         });
-        buttons.push([{ text: lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu', callback_data: `lang:${lang}` }]);
+        buttons.push([
+          { text: t.mainMenuBtn || (lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${lang}` }
+        ]);
 
-        await editMessageText(token, chatId, messageId, t.chooseGroup, {
+        const promptText = `💅 **${salonName}**\n\n${t.chooseGroup}`;
+        await editMessageText(token, chatId, messageId, promptText, {
           reply_markup: { inline_keyboard: buttons }
         });
         return;
@@ -314,16 +359,17 @@ async function handleUpdate(update, env) {
       if (action === 'services') {
         const groups = await getActiveServiceGroups(supabase);
         const allServices = await getActiveServices(supabase);
-        let text = t.servicesHeader;
+        let text = `💅 **${salonName}**\n\n${t.servicesHeader}`;
         for (const g of groups) {
           const grpServices = allServices.filter(s => String(s.groupId) === String(g.id));
           if (grpServices.length > 0) {
-            const gName = lang === 'km' && g.nameKm ? g.nameKm : g.name;
-            const gAlt = lang === 'km' ? g.name : g.nameKm;
-            text += `📁 **${gName}** _(${gAlt})_\n`;
+            const emoji = getGroupEmoji(g.id, g.name);
+            const gTitle = formatGroupHeaderTitle(g, lang);
+            text += `${emoji} **${gTitle}**\n`;
             for (const s of grpServices) {
               const name = lang === 'km' && s.nameKm ? s.nameKm : s.name;
-              text += `• **${name}** — $${s.price} (${s.durationMinutes}m)\n`;
+              const durUnit = lang === 'km' ? 'នាទី' : 'm';
+              text += `• **${name}** — $${s.price} (${s.durationMinutes}${durUnit})\n`;
             }
             text += '\n';
           }
@@ -331,7 +377,7 @@ async function handleUpdate(update, env) {
         const backKeyboard = {
           inline_keyboard: [
             [{ text: t.book, callback_data: `menu:book:${lang}` }],
-            [{ text: lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu', callback_data: `lang:${lang}` }]
+            [{ text: t.mainMenuBtn || (lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${lang}` }]
           ]
         };
         await editMessageText(token, chatId, messageId, text, { reply_markup: backKeyboard });
@@ -411,14 +457,26 @@ async function handleUpdate(update, env) {
       await answerCallbackQuery(token, queryId);
 
       const group = await getServiceGroupById(supabase, groupId);
-      const groupName = group ? (lang === 'km' && group.nameKm ? group.nameKm : group.name) : 'Group';
+      if (!group || !group.isActive) {
+        await editMessageText(token, chatId, messageId, t.groupUnavailable, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: t.allGroupsBtn || t.backToGroups, callback_data: `menu:book:${lang}` }],
+              [{ text: t.mainMenuBtn || (lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${lang}` }]
+            ]
+          }
+        });
+        return;
+      }
+
       const services = await getActiveServices(supabase, groupId);
 
       if (services.length === 0) {
         await editMessageText(token, chatId, messageId, t.emptyGroup, {
           reply_markup: {
             inline_keyboard: [
-              [{ text: t.backToGroups, callback_data: `menu:book:${lang}` }]
+              [{ text: t.backToGroups, callback_data: `menu:book:${lang}` }],
+              [{ text: t.mainMenuBtn || (lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${lang}` }]
             ]
           }
         });
@@ -431,10 +489,14 @@ async function handleUpdate(update, env) {
       const startIdx = currentPage * PAGE_SIZE;
       const pageServices = services.slice(startIdx, startIdx + PAGE_SIZE);
 
-      const buttons = pageServices.map(s => ([{
-        text: `💅 ${lang === 'km' && s.nameKm ? s.nameKm : s.name} ($${s.price} • ${s.durationMinutes}m)`,
-        callback_data: `svc:${s.id}:${lang}`
-      }]));
+      const buttons = pageServices.map(s => {
+        const sName = lang === 'km' && s.nameKm ? s.nameKm : s.name;
+        const durUnit = lang === 'km' ? 'នាទី' : 'm';
+        return [{
+          text: `💅 ${sName} — $${s.price} (${s.durationMinutes}${durUnit})`,
+          callback_data: `svc:${s.id}:${lang}`
+        }];
+      });
 
       if (totalPages > 1) {
         const navRow = [];
@@ -449,8 +511,14 @@ async function handleUpdate(update, env) {
       }
 
       buttons.push([{ text: t.backToGroups, callback_data: `menu:book:${lang}` }]);
+      buttons.push([
+        { text: t.mainMenuBtn || (lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${lang}` },
+        { text: t.cancelBtn || (lang === 'km' ? '❌ បោះបង់' : '❌ Cancel'), callback_data: `cf:cancel:${lang}` }
+      ]);
 
-      await editMessageText(token, chatId, messageId, t.servicesInGroup(groupName), {
+      const emoji = getGroupEmoji(group.id, group.name);
+      const groupTitle = formatGroupHeaderTitle(group, lang);
+      await editMessageText(token, chatId, messageId, `${emoji} **${groupTitle}**\n\n${t.servicesInGroup(groupTitle)}`, {
         reply_markup: { inline_keyboard: buttons }
       });
       return;
@@ -460,18 +528,29 @@ async function handleUpdate(update, env) {
     if (data.startsWith('svc:')) {
       const [, serviceId, lang] = data.split(':');
       const t = messages[lang] || messages.en;
-      const service = await getServiceById(supabase, serviceId);
-      if (!service) {
-        await answerCallbackQuery(token, queryId, 'Service not found', true);
+
+      const check = await isServiceAndGroupActive(supabase, serviceId);
+      if (!check.valid) {
+        const errMsg = check.reason === 'group_inactive' ? t.groupUnavailable : t.serviceUnavailable;
+        await answerCallbackQuery(token, queryId, 'Service unavailable', true);
+        await editMessageText(token, chatId, messageId, errMsg, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: t.allGroupsBtn || t.backToGroups, callback_data: `menu:book:${lang}` }],
+              [{ text: t.mainMenuBtn || (lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${lang}` }]
+            ]
+          }
+        });
         return;
       }
 
+      const service = check.service;
       await answerCallbackQuery(token, queryId);
       const availableDates = getNextSevenDays(settings, timeZone);
       if (availableDates.length === 0) {
         await editMessageText(token, chatId, messageId, t.dateClosed, {
           reply_markup: {
-            inline_keyboard: [[{ text: '↩️ Back to Services', callback_data: `menu:book:${lang}` }]]
+            inline_keyboard: [[{ text: t.allGroupsBtn || '↩️ Back to Services', callback_data: `menu:book:${lang}` }]]
           }
         });
         return;
@@ -483,7 +562,14 @@ async function handleUpdate(update, env) {
       }]));
 
       const backCallback = service.groupId ? `grp:${service.groupId}:${lang}:0` : `menu:book:${lang}`;
-      dateButtons.push([{ text: lang === 'km' ? '↩️ ថយក្រោយ' : '↩️ Back', callback_data: backCallback }]);
+      dateButtons.push([
+        { text: lang === 'km' ? '◀️ ថយក្រោយ' : '◀️ Back', callback_data: backCallback },
+        { text: t.allGroupsBtn || (lang === 'km' ? '📁 ផ្នែកសេវាកម្ម' : '📁 All Groups'), callback_data: `menu:book:${lang}` }
+      ]);
+      dateButtons.push([
+        { text: t.mainMenuBtn || (lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${lang}` },
+        { text: t.cancelBtn || (lang === 'km' ? '❌ បោះបង់' : '❌ Cancel'), callback_data: `cf:cancel:${lang}` }
+      ]);
 
       const promptText = `${t.selectedService(service)}\n\n${t.askDate}`;
       await editMessageText(token, chatId, messageId, promptText, {
@@ -496,12 +582,23 @@ async function handleUpdate(update, env) {
     if (data.startsWith('dt:')) {
       const [, serviceId, dateStr, lang] = data.split(':');
       const t = messages[lang] || messages.en;
-      const service = await getServiceById(supabase, serviceId);
-      if (!service) {
-        await answerCallbackQuery(token, queryId, 'Service not found', true);
+
+      const check = await isServiceAndGroupActive(supabase, serviceId);
+      if (!check.valid) {
+        const errMsg = check.reason === 'group_inactive' ? t.groupUnavailable : t.serviceUnavailable;
+        await answerCallbackQuery(token, queryId, 'Service unavailable', true);
+        await editMessageText(token, chatId, messageId, errMsg, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: t.allGroupsBtn || t.backToGroups, callback_data: `menu:book:${lang}` }],
+              [{ text: t.mainMenuBtn || (lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${lang}` }]
+            ]
+          }
+        });
         return;
       }
 
+      const service = check.service;
       await answerCallbackQuery(token, queryId);
       const availableSlots = await getAvailableSlots(supabase, dateStr, service.durationMinutes, settings, timeZone);
 
@@ -530,7 +627,14 @@ async function handleUpdate(update, env) {
       if (currentRow.length > 0) {
         slotKeyboard.push(currentRow);
       }
-      slotKeyboard.push([{ text: lang === 'km' ? '↩️ ជ្រើសរើសថ្ងៃឡើងវិញ' : '↩️ Back to Dates', callback_data: `svc:${serviceId}:${lang}` }]);
+      slotKeyboard.push([
+        { text: lang === 'km' ? '◀️ ជ្រើសរើសថ្ងៃឡើងវិញ' : '◀️ Back to Dates', callback_data: `svc:${serviceId}:${lang}` },
+        { text: service.groupId ? (lang === 'km' ? '📁 ផ្នែកសេវាកម្ម' : '📁 Back to Group') : '📁 Groups', callback_data: service.groupId ? `grp:${service.groupId}:${lang}:0` : `menu:book:${lang}` }
+      ]);
+      slotKeyboard.push([
+        { text: t.mainMenuBtn || (lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${lang}` },
+        { text: t.cancelBtn || (lang === 'km' ? '❌ បោះបង់' : '❌ Cancel'), callback_data: `cf:cancel:${lang}` }
+      ]);
 
       const headerText = `💅 **${lang === 'km' && service.nameKm ? service.nameKm : service.name}**\n📅 **${dateStr}**\n\n${t.askTime}`;
       await editMessageText(token, chatId, messageId, headerText, {
@@ -543,12 +647,23 @@ async function handleUpdate(update, env) {
     if (data.startsWith('sl:')) {
       const [, serviceId, dateStr, timeStr, lang] = data.split(':');
       const t = messages[lang] || messages.en;
-      const service = await getServiceById(supabase, serviceId);
-      if (!service) {
-        await answerCallbackQuery(token, queryId, 'Service not found', true);
+
+      const check = await isServiceAndGroupActive(supabase, serviceId);
+      if (!check.valid) {
+        const errMsg = check.reason === 'group_inactive' ? t.groupUnavailable : t.serviceUnavailable;
+        await answerCallbackQuery(token, queryId, 'Service unavailable', true);
+        await editMessageText(token, chatId, messageId, errMsg, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: t.allGroupsBtn || t.backToGroups, callback_data: `menu:book:${lang}` }],
+              [{ text: t.mainMenuBtn || (lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${lang}` }]
+            ]
+          }
+        });
         return;
       }
 
+      const service = check.service;
       const endTime = calculateEndTime(timeStr, service.durationMinutes);
       const customerName = [fromUser.first_name, fromUser.last_name].filter(Boolean).join(' ') || fromUser.username || 'Valued Customer';
 
@@ -646,6 +761,29 @@ async function handleUpdate(update, env) {
           });
           return;
         }
+
+        // Authoritatively re-validate service and group from Supabase
+        const check = await isServiceAndGroupActive(supabase, draft.serviceId);
+        if (!check.valid) {
+          sessions.delete(chatId);
+          const errMsg = check.reason === 'group_inactive' ? t.groupUnavailable : t.serviceUnavailable;
+          await answerCallbackQuery(token, queryId, 'Service no longer available', true);
+          await editMessageText(token, chatId, messageId, errMsg, {
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: t.allGroupsBtn || t.backToGroups, callback_data: `menu:book:${lang}` }],
+                [{ text: t.mainMenuBtn || (lang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${lang}` }]
+              ]
+            }
+          });
+          return;
+        }
+
+        // Enforce authoritative pricing and duration from Supabase record
+        draft.price = check.service.price;
+        draft.durationMinutes = check.service.durationMinutes;
+        draft.service = check.service.name;
+        draft.serviceKm = check.service.nameKm;
 
         // Slot re-validation to prevent race conditions & double-booking
         const availability = await checkSlotAvailability(
@@ -872,14 +1010,25 @@ async function handleUpdate(update, env) {
 
     // 2.6 Handle /services Command
     if (command === 'services') {
-      const services = await getActiveServices(supabase);
-      let catalog = messages.en.servicesHeader;
-      for (const s of services) {
-        catalog += `✨ **${s.name}**\n💵 $${s.price}  |  ⏱️ ${s.durationMinutes} mins\n_${s.description || ''}_\n\n`;
+      const groups = await getActiveServiceGroups(supabase);
+      const allServices = await getActiveServices(supabase);
+      let catalog = `💅 **${salonName}**\n\n${messages.en.servicesHeader}`;
+      for (const g of groups) {
+        const grpServices = allServices.filter(s => String(s.groupId) === String(g.id));
+        if (grpServices.length > 0) {
+          const emoji = getGroupEmoji(g.id, g.name);
+          const gTitle = formatGroupHeaderTitle(g, 'en');
+          catalog += `${emoji} **${gTitle}**\n`;
+          for (const s of grpServices) {
+            const kmPart = s.nameKm && s.nameKm !== s.name ? ` _(${s.nameKm})_` : '';
+            catalog += `• **${s.name}**${kmPart} — $${s.price} (${s.durationMinutes}m)\n`;
+          }
+          catalog += '\n';
+        }
       }
       const replyMarkup = isGroup
         ? undefined
-        : { inline_keyboard: [[{ text: '📅 Book Now', callback_data: 'menu:book:en' }]] };
+        : { inline_keyboard: [[{ text: '📅 Book Now / កក់សេវាកម្ម', callback_data: 'menu:book:en' }]] };
       await sendMessage(token, chatId, catalog, { reply_markup: replyMarkup });
       return;
     }
@@ -931,20 +1080,27 @@ async function handleUpdate(update, env) {
         await sendMessage(token, chatId, `ℹ️ Customer appointment booking is conducted privately to protect contact details. Please message the bot directly.`);
         return;
       }
+      const userLang = sessions.get(chatId)?.lang || 'en';
+      const t = messages[userLang] || messages.en;
       const groups = await getActiveServiceGroups(supabase);
       const allServices = await getActiveServices(supabase);
       const validGroups = groups.filter(g => allServices.some(s => String(s.groupId) === String(g.id)));
 
       const buttons = validGroups.map(g => {
         const count = allServices.filter(s => String(s.groupId) === String(g.id)).length;
+        const emoji = getGroupEmoji(g.id, g.name);
+        const label = formatGroupButtonLabel(g, userLang);
         return [{
-          text: `📁 ${g.name} (${count})`,
-          callback_data: `grp:${g.id}:en:0`
+          text: `${emoji} ${label} (${count})`,
+          callback_data: `grp:${g.id}:${userLang}:0`
         }];
       });
-      buttons.push([{ text: '↩️ Main Menu', callback_data: 'lang:en' }]);
+      buttons.push([
+        { text: t.mainMenuBtn || (userLang === 'km' ? '↩️ ម៉ឺនុយមេ' : '↩️ Main Menu'), callback_data: `lang:${userLang}` }
+      ]);
 
-      await sendMessage(token, chatId, messages.en.chooseGroup, {
+      const promptText = `💅 **${salonName}**\n\n${t.chooseGroup}`;
+      await sendMessage(token, chatId, promptText, {
         reply_markup: { inline_keyboard: buttons }
       });
       return;

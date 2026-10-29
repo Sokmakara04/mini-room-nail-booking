@@ -158,6 +158,12 @@ const ServiceGroup = {
 
   setAssignedGroupId(serviceId, groupId) {
     inMemoryServiceGroupMap[serviceId] = groupId;
+    try {
+      const { setServiceGroupOverride } = require('../telegram-worker/src/db');
+      if (typeof setServiceGroupOverride === 'function') {
+        setServiceGroupOverride(serviceId, groupId);
+      }
+    } catch (e) {}
   },
 
   async find(filter = {}) {
