@@ -2,94 +2,132 @@
 <html lang="<%= lang %>">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title><%= salonName %> | <%= success ? (lang === 'km' ? 'បានទទួលសំណើកក់' : 'Booking Received') : (lang === 'km' ? 'កក់មិនជោគជ័យ' : 'Booking Error') %></title>
   <link rel="icon" type="image/png" href="/images/favicon.png">
   <link rel="shortcut icon" href="/favicon.ico">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body class="has-bottom-nav">
+  <!-- Top Navigation (Compact, App-Like) -->
   <nav class="salon-nav">
-    <div class="container d-flex align-items-center justify-content-between">
-      <a class="salon-brand" href="/">
-        💅 <%= salonName %>
+    <div class="container d-flex align-items-center justify-content-between position-relative">
+      <a class="salon-brand" href="/?lang=<%= lang %>">
+        <span class="brand-logo-icon">💅</span>
+        <span><%= salonName %></span>
       </a>
 
-      <div class="d-flex align-items-center gap-3">
-        <a class="nav-link" href="/"><%= lang === 'km' ? 'ទំព័រដើម' : 'Home' %></a>
-        <a class="nav-link" href="/services"><%= lang === 'km' ? 'សេវាកម្ម' : 'Services' %></a>
-        <a class="nav-link d-none d-md-inline" href="/#location"><%= lang === 'km' ? 'ទីតាំងហាង' : 'Our Location' %></a>
-        <a class="nav-link" href="/status"><%= lang === 'km' ? 'ពិនិត្យការកក់' : 'Check Status' %></a>
+      <div class="d-flex align-items-center gap-2 gap-md-3">
+        <a class="nav-link d-none d-md-inline" href="/?lang=<%= lang %>"><%= lang === 'km' ? 'ទំព័រដើម' : 'Home' %></a>
+        <a class="nav-link d-none d-md-inline" href="/services?lang=<%= lang %>"><%= lang === 'km' ? 'សេវាកម្ម' : 'Services' %></a>
+        <a class="nav-link d-none d-md-inline" href="/?lang=<%= lang %>#location"><%= lang === 'km' ? 'ទីតាំងហាង' : 'Our Location' %></a>
+        <a class="nav-link d-none d-md-inline" href="/status?lang=<%= lang %>"><%= lang === 'km' ? 'ពិនិត្យការកក់' : 'Check Status' %></a>
         
         <div class="lang-switch">
-          <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>">EN</a>
-          <a href="?lang=km" class="<%= lang === 'km' ? 'active' : '' %>">ខ្មែរ</a>
+          <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>" aria-label="English">EN</a>
+          <a href="?lang=km" class="<%= lang === 'km' ? 'active' : '' %>" aria-label="Khmer">ខ្មែរ</a>
         </div>
+
+        <!-- Mobile Menu Toggle Button -->
+        <button class="salon-menu-toggle" id="salonMenuToggle" type="button" aria-label="<%= lang==='km' ? 'បើកបញ្ជីម៉ឺនុយ' : 'Toggle navigation' %>" aria-expanded="false">
+          ☰
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div class="salon-mobile-drawer" id="salonMobileDrawer">
+      <div class="salon-mobile-nav-links">
+        <a class="nav-link" href="/?lang=<%= lang %>">
+          🏠 <%= lang==='km' ? 'ទំព័រដើម' : 'Home' %>
+        </a>
+        <a class="nav-link" href="/services?lang=<%= lang %>">
+          💅 <%= lang==='km' ? 'សេវាកម្មក្រចក' : 'Nail Services' %>
+        </a>
+        <a class="nav-link" href="/?lang=<%= lang %>#location">
+          📍 <%= lang==='km' ? 'ទីតាំងហាង' : 'Our Location' %>
+        </a>
+        <a class="nav-link" href="/status?lang=<%= lang %>">
+          🔍 <%= lang==='km' ? 'ពិនិត្យការកក់' : 'Check Status' %>
+        </a>
+      </div>
+      <div class="salon-mobile-actions">
+        <a class="btn-nail w-100 py-3 justify-content-center" href="/book?lang=<%= lang %>">
+          📅 <%= lang==='km' ? 'កក់ណាត់ជួបឥឡូវនេះ' : 'Book Appointment' %>
+        </a>
       </div>
     </div>
   </nav>
 
-  <main class="container py-5">
+  <main class="container py-3 py-md-4">
     <div class="row justify-content-center">
-      <div class="col-lg-7">
-        <div class="glass-card text-center p-4 p-md-5">
+      <div class="col-12 col-md-10 col-lg-7">
+        <div class="glass-card text-center p-3 p-sm-4 p-md-5">
           <% if (success && booking) { %>
-            <div class="display-3 mb-3">🎉</div>
-            <h1 class="fw-bold mb-2">
+            <div class="display-3 mb-2">🎉</div>
+            <h1 class="fw-bold mb-2 h2">
               <%= lang === 'km' ? 'បានទទួលសំណើកក់ក្រចកដៃ!' : 'Fingernail Appointment Received!' %>
             </h1>
-            <p class="text-secondary mb-4">
+            <p class="text-secondary small mb-4">
               <%= lang === 'km' ? 'សូមអរគុណ! សំណើកក់របស់អ្នកត្រូវបានរក្សាទុកក្នុងប្រព័ន្ធ និងកំពុងរង់ចាំការបញ្ជាក់ពីហាង។' : 'Thank you! Your appointment request has been submitted and is awaiting salon confirmation.' %>
             </p>
 
+            <!-- Reference Card with One-Tap Copy -->
             <div class="reference-banner">
-              <div class="small text-secondary fw-bold text-uppercase mb-1" style="letter-spacing: 0.1em;">
+              <div class="small text-secondary fw-bold text-uppercase mb-1" style="letter-spacing: 0.08em;">
                 <%= lang === 'km' ? 'លេខកូដសម្គាល់ការកក់ (Reference Number)' : 'Booking Reference Number' %>
               </div>
-              <div class="ref-code"><%= booking.bookingReference %></div>
-              <div class="small text-muted mt-1"><%= lang === 'km' ? 'សូមរក្សាទុកលេខកូដនេះដើម្បីពិនិត្យស្ថានភាពការណាត់' : 'Save this reference code to check your appointment status anytime.' %></div>
+              <div class="d-flex align-items-center justify-content-center gap-2">
+                <div class="ref-code" id="bookingRefText"><%= booking.bookingReference %></div>
+                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" id="copyRefBtn" title="Copy reference code">
+                  📋 <%= lang === 'km' ? 'ចម្លង' : 'Copy' %>
+                </button>
+              </div>
+              <div class="small text-muted mt-2"><%= lang === 'km' ? 'សូមរក្សាទុកលេខកូដនេះដើម្បីពិនិត្យស្ថានភាពការណាត់' : 'Save this reference code to check your appointment status anytime.' %></div>
             </div>
 
-            <div class="bg-light rounded-4 p-4 text-start mb-4 border">
+            <!-- Receipt Details Card -->
+            <div class="booking-receipt-card text-start mb-4">
               <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">📋 <%= lang === 'km' ? 'ព័ត៌មានលម្អិតនៃការណាត់ជួប' : 'Appointment Details' %></h6>
               <div class="row g-2 small">
-                <div class="col-sm-6">
+                <div class="col-12 col-sm-6">
                   <span class="text-secondary"><%= lang === 'km' ? 'សេវាកម្មក្រចកដៃ៖' : 'Fingernail Service:' %></span><br>
-                  <strong><%= lang === 'km' ? (booking.serviceKm || booking.service) : booking.service %></strong>
+                  <strong class="text-dark fs-6"><%= lang === 'km' ? (booking.serviceKm || booking.service) : booking.service %></strong>
                 </div>
-                <div class="col-sm-6">
+                <div class="col-12 col-sm-6">
                   <span class="text-secondary"><%= lang === 'km' ? 'តម្លៃ៖' : 'Price:' %></span><br>
                   <strong class="text-danger fs-6">$<%= booking.price %></strong>
                 </div>
-                <div class="col-sm-6">
+                <div class="col-12 col-sm-6">
                   <span class="text-secondary"><%= lang === 'km' ? 'កាលបរិច្ឆេទ៖' : 'Date:' %></span><br>
-                  <strong><%= booking.date %></strong>
+                  <strong class="text-dark"><%= booking.date %></strong>
                 </div>
-                <div class="col-sm-6">
+                <div class="col-12 col-sm-6">
                   <span class="text-secondary"><%= lang === 'km' ? 'ពេលវេលា៖' : 'Time Slot:' %></span><br>
-                  <strong><%= booking.time %> - <%= booking.endTime %></strong> (<%= booking.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>)
+                  <strong class="text-dark"><%= booking.time %> - <%= booking.endTime %></strong> (<%= booking.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>)
                 </div>
-                <div class="col-sm-6">
+                <div class="col-12 col-sm-6">
                   <span class="text-secondary"><%= lang === 'km' ? 'ឈ្មោះអតិថិជន៖' : 'Customer Name:' %></span><br>
-                  <strong><%= booking.customerName %></strong>
+                  <strong class="text-dark"><%= booking.customerName %></strong>
                 </div>
-                <div class="col-sm-6">
+                <div class="col-12 col-sm-6">
                   <span class="text-secondary"><%= lang === 'km' ? 'លេខទូរស័ព្ទ៖' : 'Phone Number:' %></span><br>
-                  <strong><%= booking.phone %></strong>
+                  <strong class="text-dark"><%= booking.phone %></strong>
                 </div>
-                <div class="col-12 mt-2">
-                  <span class="text-secondary"><%= lang === 'km' ? 'ស្ថានភាព៖' : 'Current Status:' %></span>
+                <div class="col-12 mt-2 pt-2 border-top">
+                  <span class="text-secondary"><%= lang === 'km' ? 'ស្ថានភាពបច្ចុប្បន្ន៖' : 'Current Status:' %></span>
                   <span class="badge-status badge-<%= booking.status %> ms-2"><%= booking.status %></span>
                 </div>
               </div>
             </div>
 
-            <div class="d-flex flex-wrap gap-2 justify-content-center">
-              <a href="/status?query=<%= encodeURIComponent(booking.bookingReference) %>" class="btn-nail">
+            <!-- Action Buttons -->
+            <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center mb-3">
+              <a href="/status?query=<%= encodeURIComponent(booking.bookingReference) %>&lang=<%= lang %>" class="btn-nail">
                 🔍 <%= lang === 'km' ? 'ពិនិត្យស្ថានភាពការកក់' : 'View Booking Status' %>
               </a>
-              <a href="/" class="btn-plum">
+              <a href="/?lang=<%= lang %>" class="btn-plum">
                 🏠 <%= lang === 'km' ? 'ត្រឡប់ទៅទំព័រដើម' : 'Back to Home' %>
               </a>
             </div>
@@ -98,7 +136,7 @@
               <p class="text-secondary small mb-2">
                 📍 <%= lang === 'km' ? 'ស្វែងរកទីតាំងហាង ឬមើលផ្លូវធ្វើដំណើរមកកាន់យើងខ្ញុំ៖' : 'Need directions or want to find our location?' %>
               </p>
-              <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-2 px-3 py-2">
+              <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill" style="min-height: 42px;">
                 <span>🗺️</span>
                 <span><%= lang === 'km' ? 'មើលផ្លូវទៅហាង (Google Maps)' : 'Get Directions (Google Maps)' %></span>
                 <span class="small">↗</span>
@@ -107,15 +145,15 @@
 
           <% } else { %>
             <div class="display-3 mb-3">⚠️</div>
-            <h1 class="fw-bold text-danger mb-2">
+            <h1 class="fw-bold text-danger mb-2 h3">
               <%= lang === 'km' ? 'ការកក់មិនទាន់បានសម្រេច' : 'Booking Not Completed' %>
             </h1>
-            <p class="text-secondary mb-4"><%= message %></p>
-            <div class="d-flex gap-2 justify-content-center">
-              <a href="/book" class="btn-nail">
+            <p class="text-secondary mb-4 small"><%= message %></p>
+            <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center">
+              <a href="/book?lang=<%= lang %>" class="btn-nail">
                 ↩️ <%= lang === 'km' ? 'ព្យាយាមកក់ម្ដងទៀត' : 'Try Booking Again' %>
               </a>
-              <a href="/" class="btn btn-outline-secondary">
+              <a href="/?lang=<%= lang %>" class="btn btn-outline-secondary" style="min-height: 48px; border-radius: var(--radius-pill); display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">
                 🏠 <%= lang === 'km' ? 'ត្រឡប់ទៅទំព័រដើម' : 'Back to Home' %>
               </a>
             </div>
@@ -125,6 +163,7 @@
     </div>
   </main>
 
+  <!-- Footer -->
   <footer>
     <div class="container text-center">
       <p class="mb-1"><strong><%= salonName %></strong></p>
@@ -134,5 +173,72 @@
       </p>
     </div>
   </footer>
+
+  <!-- Mobile App Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+    <a href="/?lang=<%= lang %>" class="bottom-nav-item">
+      <span class="bottom-nav-icon">🏠</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'ទំព័រដើម' : 'Home' %></span>
+    </a>
+    <a href="/services?lang=<%= lang %>" class="bottom-nav-item">
+      <span class="bottom-nav-icon">💅</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'សេវាកម្ម' : 'Services' %></span>
+    </a>
+    <a href="/book?lang=<%= lang %>" class="bottom-nav-item book-highlight">
+      <span class="bottom-nav-icon-wrap">📅</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'កក់ណាត់' : 'Book' %></span>
+    </a>
+    <a href="/status?lang=<%= lang %>" class="bottom-nav-item active">
+      <span class="bottom-nav-icon">🔍</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'ការកក់' : 'Bookings' %></span>
+    </a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Copy reference code button
+    const copyBtn = document.getElementById('copyRefBtn');
+    const refText = document.getElementById('bookingRefText');
+    if (copyBtn && refText) {
+      copyBtn.addEventListener('click', () => {
+        const text = refText.innerText.trim();
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(() => {
+            const orig = copyBtn.innerText;
+            copyBtn.innerText = '✓ Copied!';
+            setTimeout(() => { copyBtn.innerText = orig; }, 2000);
+          });
+        }
+      });
+    }
+
+    // Mobile Drawer Toggle
+    (function() {
+      const toggleBtn = document.getElementById('salonMenuToggle');
+      const drawer = document.getElementById('salonMobileDrawer');
+      if (toggleBtn && drawer) {
+        toggleBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const isOpen = drawer.classList.toggle('show');
+          toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          toggleBtn.innerHTML = isOpen ? '✕' : '☰';
+        });
+        document.addEventListener('click', function(e) {
+          if (!drawer.contains(e.target) && !toggleBtn.contains(e.target) && drawer.classList.contains('show')) {
+            drawer.classList.remove('show');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            toggleBtn.innerHTML = '☰';
+          }
+        });
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && drawer.classList.contains('show')) {
+            drawer.classList.remove('show');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            toggleBtn.innerHTML = '☰';
+          }
+        });
+      }
+    })();
+  </script>
 </body>
 </html>

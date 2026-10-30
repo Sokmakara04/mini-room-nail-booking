@@ -2,92 +2,221 @@
 <html lang="<%= lang %>">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title><%= salonName %> | <%= lang === 'km' ? 'កក់ការណាត់ជួបក្រចកដៃ' : 'Book a Fingernail Appointment' %></title>
   <link rel="icon" type="image/png" href="/images/favicon.png">
   <link rel="shortcut icon" href="/favicon.ico">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body class="has-bottom-nav">
+  <!-- Top Navigation (Compact, App-Like) -->
   <nav class="salon-nav">
-    <div class="container d-flex align-items-center justify-content-between">
-      <a class="salon-brand" href="/">
-        💅 <%= salonName %>
+    <div class="container d-flex align-items-center justify-content-between position-relative">
+      <a class="salon-brand" href="/?lang=<%= lang %>">
+        <span class="brand-logo-icon">💅</span>
+        <span><%= salonName %></span>
       </a>
 
-      <div class="d-flex align-items-center gap-3">
-        <a class="nav-link" href="/"><%= lang === 'km' ? 'ទំព័រដើម' : 'Home' %></a>
-        <a class="nav-link" href="/services"><%= lang === 'km' ? 'សេវាកម្ម' : 'Services' %></a>
-        <a class="nav-link d-none d-md-inline" href="/#location"><%= lang === 'km' ? 'ទីតាំងហាង' : 'Our Location' %></a>
-        <a class="nav-link d-none d-md-inline" href="/status"><%= lang === 'km' ? 'ពិនិត្យការកក់' : 'Check Status' %></a>
+      <div class="d-flex align-items-center gap-2 gap-md-3">
+        <a class="nav-link d-none d-md-inline" href="/?lang=<%= lang %>"><%= lang === 'km' ? 'ទំព័រដើម' : 'Home' %></a>
+        <a class="nav-link d-none d-md-inline" href="/services?lang=<%= lang %>"><%= lang === 'km' ? 'សេវាកម្ម' : 'Services' %></a>
+        <a class="nav-link d-none d-md-inline" href="/?lang=<%= lang %>#location"><%= lang === 'km' ? 'ទីតាំងហាង' : 'Our Location' %></a>
+        <a class="nav-link d-none d-md-inline" href="/status?lang=<%= lang %>"><%= lang === 'km' ? 'ពិនិត្យការកក់' : 'Check Status' %></a>
         
         <div class="lang-switch">
-          <a href="?lang=en<%= selectedServiceId ? '&serviceId=' + selectedServiceId : '' %>" class="<%= lang === 'en' ? 'active' : '' %>">EN</a>
-          <a href="?lang=km<%= selectedServiceId ? '&serviceId=' + selectedServiceId : '' %>" class="<%= lang === 'km' ? 'active' : '' %>">ខ្មែរ</a>
+          <a href="?lang=en<%= selectedServiceId ? '&serviceId=' + selectedServiceId : '' %>" class="<%= lang === 'en' ? 'active' : '' %>" aria-label="English">EN</a>
+          <a href="?lang=km<%= selectedServiceId ? '&serviceId=' + selectedServiceId : '' %>" class="<%= lang === 'km' ? 'active' : '' %>" aria-label="Khmer">ខ្មែរ</a>
         </div>
+
+        <!-- Mobile Menu Toggle Button -->
+        <button class="salon-menu-toggle" id="salonMenuToggle" type="button" aria-label="<%= lang==='km' ? 'បើកបញ្ជីម៉ឺនុយ' : 'Toggle navigation' %>" aria-expanded="false">
+          ☰
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div class="salon-mobile-drawer" id="salonMobileDrawer">
+      <div class="salon-mobile-nav-links">
+        <a class="nav-link" href="/?lang=<%= lang %>">
+          🏠 <%= lang==='km' ? 'ទំព័រដើម' : 'Home' %>
+        </a>
+        <a class="nav-link" href="/services?lang=<%= lang %>">
+          💅 <%= lang==='km' ? 'សេវាកម្មក្រចក' : 'Nail Services' %>
+        </a>
+        <a class="nav-link" href="/?lang=<%= lang %>#location">
+          📍 <%= lang==='km' ? 'ទីតាំងហាង' : 'Our Location' %>
+        </a>
+        <a class="nav-link" href="/status?lang=<%= lang %>">
+          🔍 <%= lang==='km' ? 'ពិនិត្យការកក់' : 'Check Status' %>
+        </a>
+        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">
+          👤 <%= lang==='km' ? 'ព័ត៌មានអតិថិជន & ហាង' : 'Profile & Salon Info' %>
+        </a>
       </div>
     </div>
   </nav>
 
-  <main class="container py-5">
-    <div class="max-w-700 mx-auto text-center mb-4">
+  <main class="container py-3 py-md-4">
+    <!-- Header -->
+    <div class="max-w-700 mx-auto text-center mb-3 mb-md-4">
       <span class="hero-eyebrow">💅 <%= lang === 'km' ? 'កក់ណាត់ជួបតាមប្រព័ន្ធអនឡាញ' : 'ONLINE APPOINTMENT' %></span>
-      <h1 class="fw-bold mt-1"><%= lang === 'km' ? 'កក់សេវាកម្មក្រចកដៃ' : 'Book Your Fingernail Visit' %></h1>
-      <p class="text-secondary"><%= lang === 'km' ? 'សូមជ្រើសរើសសេវាកម្ម ថ្ងៃ និងម៉ោងដែលបងពេញចិត្ត។ ហាងនឹងបញ្ជាក់ការកក់ជូនក្នុងពេលឆាប់ៗ។' : 'Select your desired nail service, appointment date, and available time.' %></p>
+      <h1 class="fw-bold mt-1 h2"><%= lang === 'km' ? 'កក់សេវាកម្មក្រចកដៃ' : 'Book Your Fingernail Visit' %></h1>
+      <p class="text-secondary small mb-0"><%= lang === 'km' ? 'សូមជ្រើសរើសសេវាកម្ម ថ្ងៃ និងម៉ោងដែលបងពេញចិត្ត។ ហាងនឹងបញ្ជាក់ការកក់ជូនក្នុងពេលឆាប់ៗ។' : 'Select your desired nail service, appointment date, and available time.' %></p>
+    </div>
+
+    <!-- Step Progress Indicator -->
+    <div class="booking-progress-container">
+      <div class="booking-progress-steps">
+        <div class="booking-step-node active" id="stepNode1">
+          <div class="step-node-bubble">1</div>
+          <div class="step-node-label"><%= lang === 'km' ? 'សេវាកម្ម' : 'Service' %></div>
+        </div>
+        <div class="booking-step-node" id="stepNode2">
+          <div class="step-node-bubble">2</div>
+          <div class="step-node-label"><%= lang === 'km' ? 'ថ្ងៃ & ម៉ោង' : 'Date & Time' %></div>
+        </div>
+        <div class="booking-step-node" id="stepNode3">
+          <div class="step-node-bubble">3</div>
+          <div class="step-node-label"><%= lang === 'km' ? 'ព័ត៌មាន' : 'Details' %></div>
+        </div>
+        <div class="booking-step-node" id="stepNode4">
+          <div class="step-node-bubble">4</div>
+          <div class="step-node-label"><%= lang === 'km' ? 'បញ្ជាក់' : 'Confirm' %></div>
+        </div>
+      </div>
     </div>
 
     <div class="row justify-content-center">
-      <div class="col-lg-8">
-        <div class="glass-card">
+      <div class="col-12 col-md-10 col-lg-8">
+        <div class="glass-card p-3 p-sm-4">
           <form id="bookingForm" method="post" action="/book">
             <input type="hidden" name="lang" value="<%= lang %>">
             <input type="hidden" name="time" id="selectedTime" required>
 
-            <!-- Step 1: Service Selection -->
+            <!-- STEP 1: Visual Service Selection Cards -->
             <div class="mb-4">
-              <label class="form-label fw-bold" for="serviceSelect">
-                1. <%= lang === 'km' ? 'ជ្រើសរើសសេវាកម្មក្រចកដៃ (Fingernail Service)' : 'Select Fingernail Service' %>
-              </label>
-              <select class="form-select form-select-lg" id="serviceSelect" name="serviceId" required>
+              <div class="service-select-header d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                <label class="form-label fw-bold mb-0">
+                  <span class="badge bg-dark rounded-pill me-1">1</span>
+                  <%= lang === 'km' ? 'ជ្រើសរើសសេវាកម្មក្រចកដៃ' : 'Select Fingernail Service' %>
+                </label>
+                <span class="badge bg-light text-secondary border service-badge-pill" id="selectedServiceBadge">
+                  <%= lang === 'km' ? 'សូមជ្រើសរើស' : 'Please select' %>
+                </span>
+              </div>
+
+              <!-- Quick Search & Category Filter Navigation -->
+              <div class="service-filter-wrapper mb-3">
+                <!-- Search input -->
+                <div class="service-search-wrap mb-2">
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white border-end-0 text-muted">🔍</span>
+                    <input type="text" id="serviceSearchInput" class="form-control border-start-0 ps-0"
+                           placeholder="<%= lang === 'km' ? 'ស្វែងរកឈ្មោះសេវាកម្ម (ឧ. Gel, Spa, Art)...' : 'Search fingernail service (e.g. Gel, Spa, Art)...' %>"
+                           autocomplete="off">
+                    <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="clearServiceSearchBtn" aria-label="Clear search">✕</button>
+                  </div>
+                </div>
+
+                <!-- Category Chips: Wrap so ALL are visible on phone screens without cut-off -->
+                <div class="service-filter-chips" id="serviceCategoryChips">
+                  <button type="button" class="filter-chip-btn active" data-group-filter="all">
+                    <span>✨ <%= lang === 'km' ? 'ទាំងអស់' : 'All' %></span>
+                    <span class="chip-count"><%= services.length %></span>
+                  </button>
+                  <% if (typeof serviceGroups !== 'undefined' && serviceGroups && serviceGroups.length > 0) { %>
+                    <% serviceGroups.forEach(g => { 
+                         const count = services.filter(s => String(s.groupId) === String(g.id)).length;
+                         if (count > 0) {
+                    %>
+                      <button type="button" class="filter-chip-btn" data-group-filter="<%= g.id %>">
+                        <span><%= (lang === 'km' && g.nameKm) ? g.nameKm : g.name %></span>
+                        <span class="chip-count"><%= count %></span>
+                      </button>
+                    <% } }) %>
+                  <% } %>
+                </div>
+              </div>
+
+              <!-- Visual Cards Grid -->
+              <div class="service-radio-grid mb-3" id="serviceCardGrid">
+                <% services.forEach(s => { 
+                     const isSel = String(s._id) === String(selectedServiceId);
+                     const displayName = (lang === 'km' && s.nameKm) ? s.nameKm : s.name;
+                %>
+                  <div class="service-radio-card <%= isSel ? 'selected' : '' %>" 
+                       data-service-id="<%= s._id %>"
+                       data-group-id="<%= s.groupId || '' %>"
+                       data-price="<%= s.price %>"
+                       data-duration="<%= s.durationMinutes %>"
+                       data-name="<%= displayName %>"
+                       data-search="<%= (s.name + ' ' + (s.nameKm || '') + ' ' + s.price).toLowerCase() %>">
+                    
+                    <div class="service-radio-img-wrap">
+                      <img src="<%= s.imageUrl || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=300&q=80' %>" 
+                           alt="<%= s.name %>" class="service-radio-img" loading="lazy"
+                           onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=300&q=80';">
+                    </div>
+
+                    <div class="service-radio-info">
+                      <div class="service-radio-title"><%= displayName %></div>
+                      <div class="service-radio-meta">
+                        <span class="service-duration-pill">⏱️ <%= s.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %></span>
+                      </div>
+                    </div>
+
+                    <div class="service-radio-right">
+                      <div class="service-radio-price">$<%= s.price %></div>
+                      <div class="service-radio-check" aria-hidden="true">✓</div>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+
+              <!-- Empty search / filter state -->
+              <div id="serviceEmptyState" class="text-center py-4 px-3 bg-light rounded-3 border d-none mb-3">
+                <div class="fs-3 mb-1">🔍</div>
+                <div class="fw-bold text-dark"><%= lang === 'km' ? 'រកមិនឃើញសេវាកម្មក្រចកដៃនេះទេ' : 'No fingernail services found' %></div>
+                <small class="text-muted"><%= lang === 'km' ? 'សូមសាកល្បងស្វែងរកពាក្យផ្សេង ឬចុចមើលក្រុមសេវាកម្មទាំងអស់' : 'Try a different search keyword or switch to All categories' %></small>
+              </div>
+
+              <!-- Synchronized Service Select (Hidden without required to prevent unclickable focus errors) -->
+              <select class="form-select d-none" id="serviceSelect" name="serviceId" aria-hidden="true" tabindex="-1">
                 <option value=""><%= lang === 'km' ? '-- សូមជ្រើសរើសសេវាកម្ម --' : '-- Choose a service --' %></option>
-                <% if (typeof serviceGroups !== 'undefined' && serviceGroups && serviceGroups.length > 0) { %>
-                  <% serviceGroups.forEach(g => { 
-                       const grpServices = services.filter(s => String(s.groupId) === String(g.id));
-                       if (grpServices.length > 0) {
-                  %>
-                    <optgroup label="💅 <%= lang === 'km' ? g.nameKm : g.name %> (<%= lang === 'km' ? g.name : g.nameKm %>)">
-                      <% grpServices.forEach(s => { %>
-                        <option value="<%= s._id %>" 
-                          data-price="<%= s.price %>" 
-                          data-duration="<%= s.durationMinutes %>"
-                          data-name="<%= lang === 'km' ? s.nameKm : s.name %>"
-                          <%= String(s._id) === String(selectedServiceId) ? 'selected' : '' %>>
-                          <%= lang === 'km' ? s.nameKm : s.name %> — $<%= s.price %> (<%= s.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>)
-                        </option>
-                      <% }) %>
-                    </optgroup>
-                  <% } }) %>
-                <% } else { %>
-                  <% services.forEach(s => { %>
-                    <option value="<%= s._id %>" 
-                      data-price="<%= s.price %>" 
-                      data-duration="<%= s.durationMinutes %>"
-                      data-name="<%= lang === 'km' ? s.nameKm : s.name %>"
-                      <%= String(s._id) === String(selectedServiceId) ? 'selected' : '' %>>
-                      <%= lang === 'km' ? s.nameKm : s.name %> — $<%= s.price %> (<%= s.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>)
-                    </option>
-                  <% }) %>
-                <% } %>
+                <% services.forEach(s => { 
+                     const displayName = (lang === 'km' && s.nameKm) ? s.nameKm : s.name;
+                %>
+                  <option value="<%= s._id %>" 
+                    data-price="<%= s.price %>" 
+                    data-duration="<%= s.durationMinutes %>"
+                    data-name="<%= displayName %>"
+                    <%= String(s._id) === String(selectedServiceId) ? 'selected' : '' %>>
+                    <%= displayName %> — $<%= s.price %> (<%= s.durationMinutes %> <%= lang === 'km' ? 'នាទី' : 'mins' %>)
+                  </option>
+                <% }) %>
               </select>
             </div>
 
-            <!-- Step 2: Date Selection -->
-            <div class="mb-4">
+            <!-- STEP 2: Date & Available Time Slot Selection -->
+            <div class="mb-4 pt-3 border-top">
               <label class="form-label fw-bold" for="appointmentDate">
-                2. <%= lang === 'km' ? 'ជ្រើសរើសថ្ងៃណាត់ជួប (Date)' : 'Select Date' %>
+                <span class="badge bg-dark rounded-pill me-1">2</span>
+                <%= lang === 'km' ? 'ជ្រើសរើសថ្ងៃណាត់ជួប' : 'Select Appointment Date' %>
               </label>
-              <input type="date" class="form-control form-control-lg" id="appointmentDate" name="date" required min="<%= today %>" value="<%= today %>">
+
+              <!-- Quick Date Select Buttons -->
+              <div class="d-flex gap-2 mb-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1" id="quickDateToday">
+                  ⚡ <%= lang === 'km' ? 'ថ្ងៃនេះ' : 'Today' %>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1" id="quickDateTomorrow">
+                  🗓️ <%= lang === 'km' ? 'ថ្ងៃស្អែក' : 'Tomorrow' %>
+                </button>
+              </div>
+
+              <input type="date" class="form-control" id="appointmentDate" name="date" required min="<%= today %>" value="<%= today %>">
               <div class="form-text small text-muted">
                 <%= lang === 'km' ? 'ម៉ោងបើកហាង៖ ' + settings.openingTime + ' ដល់ ' + settings.closingTime : 'Salon opening hours: ' + settings.openingTime + ' to ' + settings.closingTime %>
               </div>
@@ -95,54 +224,81 @@
 
             <!-- Step 3: Available Time Slot Selection -->
             <div class="mb-4">
-              <label class="form-label fw-bold d-flex justify-content-between align-items-center">
-                <span>3. <%= lang === 'km' ? 'ជ្រើសរើសម៉ោងទំនេរ (Available Time Slot)' : 'Select Available Time Slot' %></span>
+              <label class="form-label fw-bold d-flex flex-wrap justify-content-between align-items-center gap-1">
+                <span>
+                  <span class="badge bg-dark rounded-pill me-1">3</span>
+                  <%= lang === 'km' ? 'ជ្រើសរើសម៉ោងទំនេរ' : 'Select Available Time Slot' %>
+                </span>
                 <span id="slotStatus" class="small text-muted"></span>
               </label>
               
-              <div id="slotsContainer" class="p-3 bg-light rounded-3 text-center border">
+              <div id="slotsContainer" class="p-3 bg-light rounded-4 text-center border">
                 <span class="text-secondary small"><%= lang === 'km' ? 'សូមជ្រើសរើសសេវាកម្ម និងថ្ងៃខាងលើដើម្បីបង្ហាញម៉ោងទំនេរ...' : 'Please choose a service and date above to load available slots...' %></span>
               </div>
               <div id="selectedSlotInfo" class="mt-2 text-success small fw-bold d-none"></div>
             </div>
 
-            <!-- Step 4: Customer Contact Info -->
-            <div class="row g-3 mb-4">
-              <div class="col-md-6">
-                <label class="form-label fw-bold" for="customerName">
-                  4. <%= lang === 'km' ? 'ឈ្មោះពេញរបស់អ្នក (Full Name)' : 'Your Full Name' %>
-                </label>
-                <input type="text" class="form-control" id="customerName" name="customerName" maxlength="100" placeholder="<%= lang === 'km' ? 'ឧទាហរណ៍៖ សុខ សម្បត្តិ' : 'e.g. Jane Doe' %>" required>
-              </div>
+            <!-- STEP 4: Customer Contact Info -->
+            <div class="mb-4 pt-3 border-top">
+              <label class="form-label fw-bold mb-3">
+                <span class="badge bg-dark rounded-pill me-1">4</span>
+                <%= lang === 'km' ? 'ព័ត៌មានទំនាក់ទំនងអតិថិជន' : 'Customer Contact Details' %>
+              </label>
 
-              <div class="col-md-6">
-                <label class="form-label fw-bold" for="customerPhone">
-                  5. <%= lang === 'km' ? 'លេខទូរស័ព្ទ (Phone Number)' : 'Phone Number' %>
-                </label>
-                <input type="tel" class="form-control" id="customerPhone" name="phone" maxlength="30" placeholder="<%= lang === 'km' ? 'ឧទាហរណ៍៖ 012 345 678' : 'e.g. 012 345 678' %>" required>
-              </div>
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <label class="form-label small fw-bold text-secondary" for="customerName">
+                    👤 <%= lang === 'km' ? 'ឈ្មោះពេញរបស់អ្នក' : 'Your Full Name' %> *
+                  </label>
+                  <input type="text" class="form-control" id="customerName" name="customerName" maxlength="100" placeholder="<%= lang === 'km' ? 'ឧទាហរណ៍៖ សុខ សម្បត្តិ' : 'e.g. Jane Doe' %>" required>
+                </div>
 
-              <div class="col-12">
-                <label class="form-label fw-bold small text-secondary" for="customerNotes">
-                  <%= lang === 'km' ? 'កំណត់ចំណាំបន្ថែម (ស្រេចចិត្ត)' : 'Special Requests or Notes (Optional)' %>
-                </label>
-                <textarea class="form-control" id="customerNotes" name="notes" rows="2" placeholder="<%= lang === 'km' ? 'ចំណង់ចំណូលចិត្តពណ៌ ម៉ូដក្រចក ឬសំណើពិសេស...' : 'Color preferences, specific nail art design ideas...' %>"></textarea>
-              </div>
-            </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label small fw-bold text-secondary" for="customerPhone">
+                    📞 <%= lang === 'km' ? 'លេខទូរស័ព្ទ' : 'Phone Number' %> *
+                  </label>
+                  <input type="tel" class="form-control" id="customerPhone" name="phone" maxlength="30" placeholder="<%= lang === 'km' ? 'ឧទាហរណ៍៖ 012 345 678' : 'e.g. 012 345 678' %>" required>
+                </div>
 
-            <!-- Step 5: Live Summary Box -->
-            <div id="liveSummary" class="glass-card mb-4 p-3 bg-white border border-danger-subtle d-none">
-              <h6 class="fw-bold text-dark mb-2">📋 <%= lang === 'km' ? 'សេចក្តីសង្ខេបនៃការកក់' : 'Booking Summary' %></h6>
-              <div class="row small g-2">
-                <div class="col-6"><strong><%= lang === 'km' ? 'សេវាកម្ម៖' : 'Service:' %></strong> <span id="summaryService">-</span></div>
-                <div class="col-6"><strong><%= lang === 'km' ? 'តម្លៃ៖' : 'Price:' %></strong> <span id="summaryPrice" class="text-danger fw-bold">-</span></div>
-                <div class="col-6"><strong><%= lang === 'km' ? 'កាលបរិច្ឆេទ៖' : 'Date:' %></strong> <span id="summaryDate">-</span></div>
-                <div class="col-6"><strong><%= lang === 'km' ? 'ម៉ោង៖' : 'Time:' %></strong> <span id="summaryTime">-</span></div>
+                <div class="col-12">
+                  <label class="form-label small fw-bold text-secondary" for="customerNotes">
+                    📝 <%= lang === 'km' ? 'កំណត់ចំណាំបន្ថែម (ស្រេចចិត្ត)' : 'Special Requests or Notes (Optional)' %>
+                  </label>
+                  <textarea class="form-control" id="customerNotes" name="notes" rows="2" placeholder="<%= lang === 'km' ? 'ចំណង់ចំណូលចិត្តពណ៌ ម៉ូដក្រចក ឬសំណើពិសេស...' : 'Color preferences, specific nail art design ideas...' %>"></textarea>
+                </div>
               </div>
             </div>
 
-            <button type="submit" id="submitBtn" class="btn-nail btn-lg w-100 py-3" disabled>
-              📅 <%= lang === 'km' ? 'ស្នើសុំការកក់ក្រចកដៃ' : 'Submit Fingernail Booking' %>
+            <!-- STEP 5: Live App Receipt Summary -->
+            <div id="liveSummary" class="booking-receipt-card mb-4 d-none">
+              <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
+                <h6 class="fw-bold text-dark mb-0">📋 <%= lang === 'km' ? 'សេចក្តីសង្ខេបនៃការកក់' : 'Booking Summary' %></h6>
+                <span class="badge bg-light text-primary border small font-monospace"><%= salonName %></span>
+              </div>
+              <div class="row small g-2 pt-1">
+                <div class="col-12 col-sm-6">
+                  <span class="text-secondary"><%= lang === 'km' ? 'សេវាកម្ម៖' : 'Service:' %></span><br>
+                  <strong class="text-dark" id="summaryService">-</strong>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <span class="text-secondary"><%= lang === 'km' ? 'តម្លៃ៖' : 'Price:' %></span><br>
+                  <span id="summaryPrice" class="text-danger fw-bold fs-6">-</span>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <span class="text-secondary"><%= lang === 'km' ? 'កាលបរិច្ឆេទ៖' : 'Date:' %></span><br>
+                  <strong class="text-dark" id="summaryDate">-</strong>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <span class="text-secondary"><%= lang === 'km' ? 'ម៉ោងណាត់ជួប៖' : 'Time Slot:' %></span><br>
+                  <strong class="text-dark" id="summaryTime">-</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Primary Action Button (Clear, Full Width, 52px Min Height) -->
+            <button type="submit" id="submitBtn" class="btn-nail btn-nail-lg w-100" disabled>
+              <span id="submitBtnSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+              <span id="submitBtnText">📅 <%= lang === 'km' ? 'ស្នើសុំការកក់ក្រចកដៃ' : 'Submit Fingernail Booking' %></span>
             </button>
           </form>
         </div>
@@ -150,6 +306,7 @@
     </div>
   </main>
 
+  <!-- Footer -->
   <footer>
     <div class="container text-center">
       <p class="mb-1"><strong><%= salonName %></strong></p>
@@ -160,6 +317,97 @@
     </div>
   </footer>
 
+  <!-- Customer Profile & Salon Info Modal -->
+  <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+        <div class="modal-header border-bottom pb-3" style="background: var(--bg-sand); border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg);">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fs-4">👤</span>
+            <div>
+              <h5 class="modal-title fw-bold h6 mb-0" id="profileModalLabel"><%= lang === 'km' ? 'ព័ត៌មានអតិថិជន & ហាង' : 'Customer Profile & Salon' %></h5>
+              <small class="text-muted"><%= salonName %></small>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-3 p-sm-4">
+          <div class="glass-card-subtle mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="fw-bold small text-dark">📋 <%= lang === 'km' ? 'ព័ត៌មានដែលបានរក្សាទុក' : 'Saved Customer Info' %></span>
+              <span class="badge bg-light text-secondary border small"><%= lang === 'km' ? 'ស្វ័យប្រវត្តិ' : 'Auto-Saved' %></span>
+            </div>
+            <div id="profileSavedDetails">
+              <p class="small text-muted mb-0" id="profileNoSavedInfo">
+                <%= lang === 'km' ? 'ព័ត៌មានឈ្មោះ និងលេខទូរស័ព្ទរបស់អ្នកនឹងត្រូវបានរក្សាទុកដោយស្វ័យប្រវត្តិនៅពេលកក់លើកដំបូង។' : 'Your name and phone number will be remembered here after your first booking.' %>
+              </p>
+              <div id="profileSavedContent" class="d-none">
+                <div class="small"><strong><%= lang === 'km' ? 'ឈ្មោះ៖' : 'Name:' %></strong> <span id="profNameDisplay">-</span></div>
+                <div class="small"><strong><%= lang === 'km' ? 'លេខទូរស័ព្ទ៖' : 'Phone:' %></strong> <span id="profPhoneDisplay">-</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex flex-column gap-2 mb-3">
+            <a href="/status?lang=<%= lang %>" class="btn btn-outline-dark d-flex align-items-center justify-content-between py-2 px-3 rounded-3" style="min-height: 46px;">
+              <span class="d-flex align-items-center gap-2">
+                <span>🔍</span>
+                <span class="fw-bold small"><%= lang === 'km' ? 'មើលប្រវត្តិនិងស្ថានភាពការកក់' : 'View My Appointments' %></span>
+              </span>
+              <span>→</span>
+            </a>
+            <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger d-flex align-items-center justify-content-between py-2 px-3 rounded-3" style="min-height: 46px;">
+              <span class="d-flex align-items-center gap-2">
+                <span>🗺️</span>
+                <span class="fw-bold small"><%= lang === 'km' ? 'មើលផ្លូវទៅហាង (Google Maps)' : 'Get Directions (Google Maps)' %></span>
+              </span>
+              <span>↗</span>
+            </a>
+            <a href="https://t.me/miniroomnail_bot" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary d-flex align-items-center justify-content-between py-2 px-3 rounded-3" style="min-height: 46px;">
+              <span class="d-flex align-items-center gap-2">
+                <span>✈️</span>
+                <span class="fw-bold small"><%= lang === 'km' ? 'ជំនួយការកក់ Telegram Bot' : 'Telegram Booking Bot' %></span>
+              </span>
+              <span>↗</span>
+            </a>
+          </div>
+
+          <div class="pt-2 border-top small text-secondary">
+            <div>⏰ <strong><%= lang === 'km' ? 'ម៉ោងបើកហាង៖' : 'Hours:' %></strong> <%= settings.openingTime %> - <%= settings.closingTime %> (<%= lang === 'km' ? 'រៀងរាល់ថ្ងៃ' : 'Mon - Sun' %>)</div>
+            <% if (settings.salonPhone) { %>
+              <div class="mt-1">📞 <strong><%= lang === 'km' ? 'លេខទូរស័ព្ទ៖' : 'Phone:' %></strong> <a href="tel:<%= settings.salonPhone %>" class="text-decoration-none text-dark"><%= settings.salonPhone %></a></div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile App Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+    <a href="/?lang=<%= lang %>" class="bottom-nav-item">
+      <span class="bottom-nav-icon">🏠</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'ទំព័រដើម' : 'Home' %></span>
+    </a>
+    <a href="/services?lang=<%= lang %>" class="bottom-nav-item">
+      <span class="bottom-nav-icon">💅</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'សេវាកម្ម' : 'Services' %></span>
+    </a>
+    <a href="/book?lang=<%= lang %>" class="bottom-nav-item book-highlight active">
+      <span class="bottom-nav-icon-wrap">📅</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'កក់ណាត់' : 'Book' %></span>
+    </a>
+    <a href="/status?lang=<%= lang %>" class="bottom-nav-item">
+      <span class="bottom-nav-icon">🔍</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'ការកក់' : 'Bookings' %></span>
+    </a>
+    <a href="#" class="bottom-nav-item" data-bs-toggle="modal" data-bs-target="#profileModal">
+      <span class="bottom-nav-icon">👤</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'គណនី' : 'Profile' %></span>
+    </a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     const serviceSelect = document.getElementById('serviceSelect');
     const dateInput = document.getElementById('appointmentDate');
@@ -173,16 +421,193 @@
     const summaryDate = document.getElementById('summaryDate');
     const summaryTime = document.getElementById('summaryTime');
     const submitBtn = document.getElementById('submitBtn');
+    const submitBtnSpinner = document.getElementById('submitBtnSpinner');
+    const submitBtnText = document.getElementById('submitBtnText');
+    const bookingForm = document.getElementById('bookingForm');
+    const customerNameInput = document.getElementById('customerName');
+    const customerPhoneInput = document.getElementById('customerPhone');
+    const selectedServiceBadge = document.getElementById('selectedServiceBadge');
 
     let currentSlots = [];
     const isKm = '<%= lang %>' === 'km';
 
+    // Step indicators
+    const stepNode1 = document.getElementById('stepNode1');
+    const stepNode2 = document.getElementById('stepNode2');
+    const stepNode3 = document.getElementById('stepNode3');
+    const stepNode4 = document.getElementById('stepNode4');
+
+    function updateStepIndicator() {
+      const hasService = serviceSelect.value !== '';
+      const hasDate = dateInput.value !== '';
+      const hasTime = selectedTimeInput.value !== '';
+      const hasCustomer = customerNameInput.value.trim() !== '' && customerPhoneInput.value.trim() !== '';
+
+      stepNode1.classList.toggle('completed', hasService);
+      stepNode2.classList.toggle('active', hasService && (!hasDate || !hasTime));
+      stepNode2.classList.toggle('completed', hasDate && hasTime);
+      stepNode3.classList.toggle('active', hasDate && hasTime && !hasCustomer);
+      stepNode3.classList.toggle('completed', hasCustomer);
+      stepNode4.classList.toggle('active', hasService && hasDate && hasTime && hasCustomer);
+    }
+
+    // Auto-fill customer info from localStorage
+    try {
+      const savedName = localStorage.getItem('miniroom_customer_name');
+      const savedPhone = localStorage.getItem('miniroom_customer_phone');
+      if (savedName && customerNameInput && !customerNameInput.value) {
+        customerNameInput.value = savedName;
+      }
+      if (savedPhone && customerPhoneInput && !customerPhoneInput.value) {
+        customerPhoneInput.value = savedPhone;
+      }
+    } catch (e) {}
+
+    // Save customer info upon submit with validation
+    bookingForm.addEventListener('submit', function(e) {
+      if (!serviceSelect.value) {
+        e.preventDefault();
+        alert(isKm ? 'សូមជ្រើសរើសសេវាកម្មក្រចកដៃជាមុនសិន!' : 'Please select a fingernail service first!');
+        const grid = document.getElementById('serviceCardGrid');
+        if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return false;
+      }
+      submitBtn.disabled = true;
+      submitBtnSpinner.classList.remove('d-none');
+      submitBtnText.innerText = isKm ? 'កំពុងដំណើរការ...' : 'Processing booking...';
+      try {
+        if (customerNameInput.value.trim()) {
+          localStorage.setItem('miniroom_customer_name', customerNameInput.value.trim());
+        }
+        if (customerPhoneInput.value.trim()) {
+          localStorage.setItem('miniroom_customer_phone', customerPhoneInput.value.trim());
+        }
+      } catch (e) {}
+    });
+
+    customerNameInput.addEventListener('input', () => {
+      updateSummary();
+      updateStepIndicator();
+    });
+    customerPhoneInput.addEventListener('input', () => {
+      updateSummary();
+      updateStepIndicator();
+    });
+
+    // Quick Date Selection Buttons
+    const todayBtn = document.getElementById('quickDateToday');
+    const tomorrowBtn = document.getElementById('quickDateTomorrow');
+
+    function getFormattedDate(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    if (todayBtn) {
+      todayBtn.addEventListener('click', () => {
+        const now = new Date();
+        dateInput.value = getFormattedDate(now);
+        loadAvailableSlots();
+      });
+    }
+
+    if (tomorrowBtn) {
+      tomorrowBtn.addEventListener('click', () => {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        dateInput.value = getFormattedDate(tomorrow);
+        loadAvailableSlots();
+      });
+    }
+
+    // Visual Service Radio Cards Click Interaction
+    const serviceRadioCards = document.querySelectorAll('.service-radio-card');
+    serviceRadioCards.forEach(card => {
+      card.addEventListener('click', () => {
+        const sId = card.getAttribute('data-service-id');
+        const sName = card.getAttribute('data-name');
+        const sPrice = card.getAttribute('data-price');
+
+        serviceRadioCards.forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+
+        serviceSelect.value = sId;
+        if (selectedServiceBadge) {
+          selectedServiceBadge.innerText = `✓ ${sName} ($${sPrice})`;
+          selectedServiceBadge.classList.add('selected-active');
+          selectedServiceBadge.classList.remove('text-secondary');
+        }
+
+        loadAvailableSlots();
+        updateStepIndicator();
+      });
+    });
+
+    // Service Group Filter Chips & Live Search
+    const groupFilterChips = document.querySelectorAll('[data-group-filter]');
+    const serviceSearchInput = document.getElementById('serviceSearchInput');
+    const clearServiceSearchBtn = document.getElementById('clearServiceSearchBtn');
+    const serviceEmptyState = document.getElementById('serviceEmptyState');
+    let currentGroupFilter = 'all';
+
+    function applyServiceFilter() {
+      const query = (serviceSearchInput?.value || '').trim().toLowerCase();
+      if (clearServiceSearchBtn) {
+        clearServiceSearchBtn.classList.toggle('d-none', !query);
+      }
+
+      let visibleCount = 0;
+      serviceRadioCards.forEach(card => {
+        const cardGroup = card.getAttribute('data-group-id') || '';
+        const searchTerms = (card.getAttribute('data-search') || '').toLowerCase();
+        
+        const matchesGroup = (currentGroupFilter === 'all' || cardGroup === currentGroupFilter);
+        const matchesSearch = (!query || searchTerms.includes(query));
+
+        if (matchesGroup && matchesSearch) {
+          card.style.display = 'flex';
+          visibleCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      if (serviceEmptyState) {
+        serviceEmptyState.classList.toggle('d-none', visibleCount > 0);
+      }
+    }
+
+    groupFilterChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        groupFilterChips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentGroupFilter = chip.getAttribute('data-group-filter') || 'all';
+        applyServiceFilter();
+      });
+    });
+
+    if (serviceSearchInput) {
+      serviceSearchInput.addEventListener('input', applyServiceFilter);
+    }
+
+    if (clearServiceSearchBtn) {
+      clearServiceSearchBtn.addEventListener('click', () => {
+        serviceSearchInput.value = '';
+        applyServiceFilter();
+        serviceSearchInput.focus();
+      });
+    }
+
+    // Slot fetching
     async function loadAvailableSlots() {
       const serviceId = serviceSelect.value;
       const date = dateInput.value;
       selectedTimeInput.value = '';
       selectedSlotInfo.classList.add('d-none');
       updateSummary();
+      updateStepIndicator();
 
       if (!serviceId || !date) {
         slotsContainer.innerHTML = `<span class="text-secondary small">${isKm ? 'សូមជ្រើសរើសសេវាកម្ម និងថ្ងៃដើម្បីបង្ហាញម៉ោងទំនេរ' : 'Please select service and date to view available slots.'}</span>`;
@@ -224,6 +649,7 @@
             selectedSlotInfo.innerText = `✓ ${isKm ? 'បានជ្រើសម៉ោង' : 'Selected'}: ${btn.dataset.time} - ${end}`;
             selectedSlotInfo.classList.remove('d-none');
             updateSummary();
+            updateStepIndicator();
           });
         });
       } catch (err) {
@@ -240,8 +666,8 @@
 
       if (hasService && hasDate && hasTime) {
         liveSummary.classList.remove('d-none');
-        summaryService.innerText = selectedOption.dataset.name || '';
-        summaryPrice.innerText = '$' + (selectedOption.dataset.price || '0');
+        summaryService.innerText = selectedOption?.dataset?.name || '';
+        summaryPrice.innerText = '$' + (selectedOption?.dataset?.price || '0');
         summaryDate.innerText = dateInput.value;
         const matching = currentSlots.find(s => s.time === selectedTimeInput.value);
         summaryTime.innerText = selectedTimeInput.value + (matching ? ` - ${matching.endTime}` : '');
@@ -252,13 +678,51 @@
       }
     }
 
-    serviceSelect.addEventListener('change', loadAvailableSlots);
     dateInput.addEventListener('change', loadAvailableSlots);
 
     // Initial load if service is pre-selected
     if (serviceSelect.value) {
+      const initialCard = document.querySelector(`.service-radio-card[data-service-id="${serviceSelect.value}"]`);
+      if (initialCard) {
+        initialCard.classList.add('selected');
+        const sName = initialCard.getAttribute('data-name');
+        const sPrice = initialCard.getAttribute('data-price');
+        if (selectedServiceBadge) {
+          selectedServiceBadge.innerText = `✓ ${sName} ($${sPrice})`;
+          selectedServiceBadge.classList.add('selected-active');
+          selectedServiceBadge.classList.remove('text-secondary');
+        }
+      }
       loadAvailableSlots();
     }
+
+    // Mobile Drawer Toggle
+    (function() {
+      const toggleBtn = document.getElementById('salonMenuToggle');
+      const drawer = document.getElementById('salonMobileDrawer');
+      if (toggleBtn && drawer) {
+        toggleBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const isOpen = drawer.classList.toggle('show');
+          toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          toggleBtn.innerHTML = isOpen ? '✕' : '☰';
+        });
+        document.addEventListener('click', function(e) {
+          if (!drawer.contains(e.target) && !toggleBtn.contains(e.target) && drawer.classList.contains('show')) {
+            drawer.classList.remove('show');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            toggleBtn.innerHTML = '☰';
+          }
+        });
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && drawer.classList.contains('show')) {
+            drawer.classList.remove('show');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            toggleBtn.innerHTML = '☰';
+          }
+        });
+      }
+    })();
   </script>
 </body>
 </html>

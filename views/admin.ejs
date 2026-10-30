@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Mini Room Nail & Eyelash | Admin Dashboard</title>
   <link rel="icon" type="image/png" href="/images/favicon.png">
   <link rel="shortcut icon" href="/favicon.ico">
@@ -14,8 +14,9 @@
       font-weight: 700;
       color: var(--text-muted);
       border: none;
-      padding: 0.8rem 1.4rem;
+      padding: 0.65rem 1.1rem;
       border-radius: var(--radius-md) var(--radius-md) 0 0;
+      white-space: nowrap;
     }
 
     .nav-tabs .nav-link.active {
@@ -143,22 +144,55 @@
 
 <body style="background: #f8f3f4;">
   <!-- Admin Navbar -->
-  <nav class="salon-nav bg-white">
-    <div class="container d-flex justify-content-between align-items-center">
+  <nav class="salon-nav bg-white position-relative">
+    <div class="container d-flex justify-content-between align-items-center gap-2">
       <div class="d-flex align-items-center gap-2">
         <a class="salon-brand" href="/admin">
-          💅 <%= salonName %> <span class="badge bg-dark fs-6 ms-2">Admin Panel</span>
+          💅 <%= salonName %> <span class="badge bg-dark fs-6 ms-2 d-none d-sm-inline">Admin Panel</span>
         </a>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <a href="/" class="btn btn-outline-dark btn-sm" target="_blank">🌐 View Website</a>
-        <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener noreferrer">📍 Maps</a>
-        <a href="https://t.me/miniroomnail_bot" class="btn btn-sm btn-outline-primary" target="_blank">✈️ Bot Chat</a>
+        <div class="d-none d-md-flex align-items-center gap-2">
+          <a href="/" class="btn btn-outline-dark btn-sm" target="_blank" title="View customer-facing website">🌐 View Website</a>
+          <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener noreferrer" title="Google Maps Location">📍 Maps</a>
+          <a href="https://t.me/miniroomnail_bot" class="btn btn-sm btn-outline-primary" target="_blank" title="Telegram Booking Bot">✈️ Bot Chat</a>
+        </div>
+        <!-- Mobile Drawer Hamburger Toggle -->
+        <button class="salon-menu-toggle d-md-none" id="adminMenuToggle" type="button" aria-label="Toggle admin navigation menu" aria-expanded="false">
+          ☰
+        </button>
+      </div>
+    </div>
+
+    <!-- Admin Mobile Navigation Drawer -->
+    <div class="salon-mobile-drawer" id="adminMobileDrawer">
+      <div class="salon-mobile-nav-links">
+        <div class="small fw-bold text-muted px-2 py-1 text-uppercase" style="letter-spacing: 0.05em;">Admin Modules</div>
+        <button type="button" class="nav-link border-0 bg-transparent text-start w-100 admin-drawer-tab-btn <%= activeTab === 'bookings' ? 'active' : '' %>" data-tab-target="bookings-tab">
+          📅 Appointments (<%= bookings.length %>)
+        </button>
+        <button type="button" class="nav-link border-0 bg-transparent text-start w-100 admin-drawer-tab-btn <%= activeTab === 'calendar' ? 'active' : '' %>" data-tab-target="calendar-tab">
+          🗓️ Booking Calendar
+        </button>
+        <button type="button" class="nav-link border-0 bg-transparent text-start w-100 admin-drawer-tab-btn <%= activeTab === 'services' ? 'active' : '' %>" data-tab-target="services-tab">
+          💅 Fingernail Services (<%= services.length %>)
+        </button>
+        <button type="button" class="nav-link border-0 bg-transparent text-start w-100 admin-drawer-tab-btn <%= activeTab === 'groups' ? 'active' : '' %>" data-tab-target="groups-tab">
+          📁 Service Groups (<%= (typeof serviceGroups !== 'undefined' && serviceGroups) ? serviceGroups.length : 0 %>)
+        </button>
+        <button type="button" class="nav-link border-0 bg-transparent text-start w-100 admin-drawer-tab-btn <%= activeTab === 'schedule' ? 'active' : '' %>" data-tab-target="schedule-tab">
+          ⚙️ Salon Schedule & Hours
+        </button>
+      </div>
+      <div class="salon-mobile-actions">
+        <a href="/" class="btn btn-outline-dark btn-sm w-100 py-2 justify-content-center" target="_blank">🌐 View Customer Website</a>
+        <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" class="btn btn-sm btn-outline-secondary w-100 py-2 justify-content-center" target="_blank" rel="noopener noreferrer">📍 Google Maps</a>
+        <a href="https://t.me/miniroomnail_bot" class="btn btn-sm btn-outline-primary w-100 py-2 justify-content-center" target="_blank">✈️ Telegram Booking Bot</a>
       </div>
     </div>
   </nav>
 
-  <main class="container py-4">
+  <main class="container py-3 py-md-4">
     <!-- Top Statistics Grid -->
     <div class="admin-stats-grid">
       <div class="admin-stat-card">
@@ -196,7 +230,7 @@
       <% } %>
 
         <!-- Navigation Tabs -->
-        <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+        <ul class="nav nav-tabs nav-tabs-responsive mb-3 mb-md-4" id="adminTabs" role="tablist">
           <li class="nav-item">
             <button class="nav-link <%= activeTab === 'bookings' ? 'active' : '' %>" id="bookings-tab"
               data-bs-toggle="tab" data-bs-target="#bookings-pane" type="button">
@@ -235,30 +269,32 @@
             <!-- Filter and Search Bar -->
             <div class="glass-card mb-4 p-3 bg-white shadow-sm">
               <!-- Quick Range Filter Buttons & Date Range Label -->
-              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
-                <div class="d-flex align-items-center flex-wrap gap-2">
-                  <span class="badge bg-primary text-white fs-6 py-2 px-3">
+              <div class="admin-filter-header mb-3 pb-2 border-bottom">
+                <!-- Date range label row -->
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                  <span class="badge bg-primary text-white py-2 px-3 admin-date-range-badge">
                     📅 <%= dateRangeLabel %>
                   </span>
                   <span class="badge bg-light text-secondary border py-2 px-2">
                     🌐 <%= timeZone %>
                   </span>
                 </div>
-                <div class="btn-group btn-group-sm" role="group">
+                <!-- Quick view buttons — horizontally scrollable on mobile -->
+                <div class="admin-quick-views" role="group">
                   <a href="/admin?tab=bookings&view=7days"
-                    class="btn <%= viewMode === '7days' ? 'btn-dark' : 'btn-outline-secondary' %>">
-                    🗓️ Rolling 7 Days (Default)
+                    class="btn btn-sm <%= viewMode === '7days' ? 'btn-dark' : 'btn-outline-secondary' %>">
+                    🗓️ Rolling 7 Days
                   </a>
                   <a href="/admin?tab=bookings&view=today"
-                    class="btn <%= viewMode === 'today' ? 'btn-dark' : 'btn-outline-secondary' %>">
+                    class="btn btn-sm <%= viewMode === 'today' ? 'btn-dark' : 'btn-outline-secondary' %>">
                     ⚡ Today
                   </a>
                   <a href="/admin?tab=bookings&view=upcoming"
-                    class="btn <%= viewMode === 'upcoming' ? 'btn-dark' : 'btn-outline-secondary' %>">
-                    🔜 All Upcoming
+                    class="btn btn-sm <%= viewMode === 'upcoming' ? 'btn-dark' : 'btn-outline-secondary' %>">
+                    🔜 Upcoming
                   </a>
                   <a href="/admin?tab=bookings&view=all"
-                    class="btn <%= viewMode === 'all' ? 'btn-dark' : 'btn-outline-secondary' %>">
+                    class="btn btn-sm <%= viewMode === 'all' ? 'btn-dark' : 'btn-outline-secondary' %>">
                     📚 All History
                   </a>
                 </div>
@@ -267,12 +303,12 @@
               <form method="get" action="/admin" class="row g-2 align-items-center">
                 <input type="hidden" name="tab" value="bookings">
                 <input type="hidden" name="view" value="custom">
-                <div class="col-md-3">
+                <div class="col-12 col-sm-6 col-md-3 col-lg-3">
                   <label class="form-label small fw-bold text-muted mb-1">Filter by Specific Date</label>
                   <input type="date" name="filterDate" class="form-control form-control-sm"
                     value="<%= filters.filterDate || '' %>">
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
                   <label class="form-label small fw-bold text-muted mb-1">Status</label>
                   <select name="filterStatus" class="form-select form-select-sm">
                     <option value="">All Statuses</option>
@@ -282,22 +318,28 @@
                       <% }) %>
                   </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-12 col-md-3 col-lg-4">
                   <label class="form-label small fw-bold text-muted mb-1">Search Customer / Phone / Reference</label>
                   <input type="text" name="search" class="form-control form-control-sm"
                     placeholder="Search by name, phone or NL-XXXXXX" value="<%= filters.search || '' %>">
                 </div>
-                <div class="col-md-2 d-flex gap-2 align-self-end">
-                  <button type="submit" class="btn btn-sm btn-dark w-100">Filter</button>
-                  <a href="/admin?tab=bookings" class="btn btn-sm btn-outline-secondary">Reset</a>
+                <div class="col-12 col-md-3 col-lg-3 d-flex gap-2 align-self-end mt-2 mt-md-0">
+                  <button type="submit" class="btn btn-sm btn-dark flex-fill d-inline-flex align-items-center justify-content-center" style="min-height: 38px;">
+                    <span>🔍 Filter</span>
+                  </button>
+                  <a href="/admin?tab=bookings" id="adminResetFilterBtn" class="btn btn-sm btn-outline-secondary flex-fill d-inline-flex align-items-center justify-content-center text-nowrap" style="min-height: 38px;">
+                    <span>🔄 Reset</span>
+                  </a>
                 </div>
               </form>
             </div>
 
-            <!-- Appointments Table -->
-            <div class="glass-card p-0 bg-white overflow-hidden shadow-sm">
+            <!-- =============================================
+                 APPOINTMENTS — DESKTOP TABLE (≥1024px)
+                 ============================================= -->
+            <div class="glass-card p-0 bg-white overflow-hidden shadow-sm admin-desktop-table">
               <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" style="min-width: 680px;">
                   <thead class="table-light small text-uppercase fw-bold">
                     <tr>
                       <th class="ps-3">Reference / Date</th>
@@ -315,113 +357,178 @@
                           No nail appointments match the selected filter.
                         </td>
                       </tr>
-                      <% } %>
-                        <% bookings.forEach(b=> { %>
-                          <tr>
-                            <td class="ps-3">
-                              <strong class="text-primary font-monospace">
-                                <%= b.bookingReference %>
-                              </strong>
-                              <div class="text-dark fw-bold">
-                                <%= b.date %>
-                              </div>
-                              <small class="badge bg-light text-secondary">
-                                <%= b.source.toUpperCase() %>
-                              </small>
-                            </td>
-                            <td>
-                              <div class="fw-bold text-dark">
-                                <%= b.customerName %>
-                              </div>
-                              <div><a href="tel:<%= b.phone %>" class="text-decoration-none text-secondary">
-                                  <%= b.phone %>
-                                </a></div>
-                              <% if (b.telegramId) { %>
-                                <small class="text-primary">Telegram ID: <%= b.telegramId %></small>
-                                <% } %>
-                                  <% if (b.notes) { %>
-                                    <div class="text-muted small fst-italic">"<%= b.notes %>"</div>
-                                    <% } %>
-                            </td>
-                            <td>
-                              <strong>
-                                <%= b.service %>
-                              </strong>
-                              <div class="text-muted small">
-                                <%= b.serviceKm %>
-                              </div>
-                              <div class="text-danger fw-bold">$<%= b.price %>
-                              </div>
-                            </td>
-                            <td>
-                              <strong>
-                                <%= b.time %> - <%= b.endTime %>
-                              </strong>
-                              <div class="text-muted small">(<%= b.durationMinutes %> mins)</div>
-                            </td>
-                            <td>
-                              <span class="badge-status badge-<%= b.status %>">
-                                <%= b.status %>
-                              </span>
-                            </td>
-                            <td class="text-end pe-3">
-                              <div class="d-inline-flex gap-1">
-                                <% if (b.status==='pending' ) { %>
-                                  <!-- Quick Confirm -->
-                                  <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
-                                    <input type="hidden" name="status" value="confirmed">
-                                    <button type="submit" class="btn btn-sm btn-success px-2 py-1"
-                                      title="Confirm booking">✓ Confirm</button>
-                                  </form>
-                                  <!-- Quick Reject -->
-                                  <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
-                                    <input type="hidden" name="status" value="rejected">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1"
-                                      title="Reject booking">✕ Reject</button>
-                                  </form>
-                                  <% } else if (b.status==='confirmed' ) { %>
-                                    <!-- Mark Completed -->
-                                    <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
-                                      <input type="hidden" name="status" value="completed">
-                                      <button type="submit" class="btn btn-sm btn-outline-primary px-2 py-1"
-                                        title="Complete appointment">Complete</button>
-                                    </form>
-                                    <!-- Cancel -->
-                                    <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline"
-                                      onsubmit="return confirm('Cancel this confirmed appointment?');">
-                                      <input type="hidden" name="status" value="cancelled">
-                                      <button type="submit"
-                                        class="btn btn-sm btn-outline-secondary px-2 py-1">Cancel</button>
-                                    </form>
-                                    <% } else { %>
-                                      <span class="text-muted small fst-italic me-2">Archived</span>
-                                      <% } %>
-
-                                        <!-- Reschedule Button (opens modal) -->
-                                        <button type="button" class="btn btn-sm btn-light border px-2 py-1"
-                                          data-bs-toggle="modal" data-bs-target="#rescheduleModal"
-                                          data-id="<%= b._id %>" data-ref="<%= b.bookingReference %>"
-                                          data-date="<%= b.date %>" data-time="<%= b.time %>"
-                                          data-duration="<%= b.durationMinutes %>" data-name="<%= b.customerName %>">
-                                          🗓️ Reschedule
-                                        </button>
-
-                                        <!-- Delete Button (opens confirmation modal) -->
-                                        <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1"
-                                          data-bs-toggle="modal" data-bs-target="#deleteBookingModal"
-                                          data-id="<%= b._id %>" data-ref="<%= b.bookingReference %>"
-                                          data-name="<%= b.customerName %>" data-service="<%= b.service %>"
-                                          data-date="<%= b.date %>" data-time="<%= b.time %>"
-                                          title="Delete this booking record">
-                                          🗑️ Delete
-                                        </button>
-                              </div>
-                            </td>
-                          </tr>
-                          <% }) %>
+                    <% } %>
+                    <% bookings.forEach(b=> { %>
+                      <tr>
+                        <td class="ps-3">
+                          <strong class="text-primary font-monospace"><%= b.bookingReference %></strong>
+                          <div class="text-dark fw-bold"><%= b.date %></div>
+                          <small class="badge bg-light text-secondary"><%= b.source.toUpperCase() %></small>
+                        </td>
+                        <td>
+                          <div class="fw-bold text-dark"><%= b.customerName %></div>
+                          <div><a href="tel:<%= b.phone %>" class="text-decoration-none text-secondary"><%= b.phone %></a></div>
+                          <% if (b.telegramId) { %><small class="text-primary">Telegram ID: <%= b.telegramId %></small><% } %>
+                          <% if (b.notes) { %><div class="text-muted small fst-italic">"<%= b.notes %>"</div><% } %>
+                        </td>
+                        <td>
+                          <strong><%= b.service %></strong>
+                          <div class="text-muted small"><%= b.serviceKm %></div>
+                          <div class="text-danger fw-bold">$<%= b.price %></div>
+                        </td>
+                        <td>
+                          <strong><%= b.time %> - <%= b.endTime %></strong>
+                          <div class="text-muted small">(<%= b.durationMinutes %> mins)</div>
+                        </td>
+                        <td><span class="badge-status badge-<%= b.status %>"><%= b.status %></span></td>
+                        <td class="text-end pe-3">
+                          <div class="admin-action-btn-group">
+                            <% if (b.status==='pending') { %>
+                              <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
+                                <input type="hidden" name="status" value="confirmed">
+                                <button type="submit" class="btn btn-sm btn-success px-2 py-1" title="Confirm booking">✓ Confirm</button>
+                              </form>
+                              <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
+                                <input type="hidden" name="status" value="rejected">
+                                <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1" title="Reject booking">✕ Reject</button>
+                              </form>
+                            <% } else if (b.status==='confirmed') { %>
+                              <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline">
+                                <input type="hidden" name="status" value="completed">
+                                <button type="submit" class="btn btn-sm btn-outline-primary px-2 py-1">Complete</button>
+                              </form>
+                              <form method="post" action="/admin/bookings/<%= b._id %>/status" class="d-inline" onsubmit="return confirm('Cancel this confirmed appointment?');">
+                                <input type="hidden" name="status" value="cancelled">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary px-2 py-1">Cancel</button>
+                              </form>
+                            <% } else { %>
+                              <span class="text-muted small fst-italic me-2">Archived</span>
+                            <% } %>
+                            <button type="button" class="btn btn-sm btn-light border px-2 py-1"
+                              data-bs-toggle="modal" data-bs-target="#rescheduleModal"
+                              data-id="<%= b._id %>" data-ref="<%= b.bookingReference %>"
+                              data-date="<%= b.date %>" data-time="<%= b.time %>"
+                              data-duration="<%= b.durationMinutes %>" data-name="<%= b.customerName %>">
+                              🗓️ Reschedule
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1"
+                              data-bs-toggle="modal" data-bs-target="#deleteBookingModal"
+                              data-id="<%= b._id %>" data-ref="<%= b.bookingReference %>"
+                              data-name="<%= b.customerName %>" data-service="<%= b.service %>"
+                              data-date="<%= b.date %>" data-time="<%= b.time %>">
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    <% }) %>
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            <!-- =============================================
+                 APPOINTMENTS — MOBILE CARDS (<1024px)
+                 ============================================= -->
+            <div class="admin-mobile-cards">
+              <% if (!bookings.length) { %>
+                <div class="admin-card-empty">
+                  <div class="admin-card-empty-icon">📅</div>
+                  <div>No nail appointments match the selected filter.</div>
+                </div>
+              <% } %>
+              <% bookings.forEach(b=> { %>
+                <div class="admin-record-card">
+                  <!-- Card Header -->
+                  <div class="admin-card-header">
+                    <div class="admin-card-title">
+                      <span class="admin-card-name"><%= b.customerName %></span>
+                      <span class="badge-status badge-<%= b.status %>"><%= b.status %></span>
+                    </div>
+                    <div class="admin-card-ref font-monospace"><%= b.bookingReference %></div>
+                  </div>
+                  <!-- Card Body -->
+                  <div class="admin-card-body">
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">📅 Date</span>
+                      <span class="admin-card-value fw-bold"><%= b.date %></span>
+                    </div>
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">⏰ Time</span>
+                      <span class="admin-card-value"><strong><%= b.time %> – <%= b.endTime %></strong> (<%= b.durationMinutes %> mins)</span>
+                    </div>
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">💅 Service</span>
+                      <span class="admin-card-value">
+                        <strong><%= b.service %></strong>
+                        <% if (b.serviceKm) { %><br><span class="text-muted small"><%= b.serviceKm %></span><% } %>
+                      </span>
+                    </div>
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">💰 Price</span>
+                      <span class="admin-card-value text-danger fw-bold">$<%= b.price %></span>
+                    </div>
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">📞 Phone</span>
+                      <span class="admin-card-value"><a href="tel:<%= b.phone %>" class="text-decoration-none"><%= b.phone %></a></span>
+                    </div>
+                    <% if (b.telegramId) { %>
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">✈️ Telegram</span>
+                      <span class="admin-card-value text-primary small"><%= b.telegramId %></span>
+                    </div>
+                    <% } %>
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">📲 Source</span>
+                      <span class="admin-card-value"><span class="badge bg-light text-secondary border"><%= b.source.toUpperCase() %></span></span>
+                    </div>
+                    <% if (b.notes) { %>
+                    <div class="admin-card-row admin-card-row--full">
+                      <span class="admin-card-label">📝 Notes</span>
+                      <span class="admin-card-value fst-italic text-muted">"<%= b.notes %>"</span>
+                    </div>
+                    <% } %>
+                  </div>
+                  <!-- Card Actions -->
+                  <div class="admin-card-actions">
+                    <% if (b.status==='pending') { %>
+                      <form method="post" action="/admin/bookings/<%= b._id %>/status">
+                        <input type="hidden" name="status" value="confirmed">
+                        <button type="submit" class="admin-card-btn admin-card-btn--success">✓ Confirm</button>
+                      </form>
+                      <form method="post" action="/admin/bookings/<%= b._id %>/status">
+                        <input type="hidden" name="status" value="rejected">
+                        <button type="submit" class="admin-card-btn admin-card-btn--danger-outline">✕ Reject</button>
+                      </form>
+                    <% } else if (b.status==='confirmed') { %>
+                      <form method="post" action="/admin/bookings/<%= b._id %>/status">
+                        <input type="hidden" name="status" value="completed">
+                        <button type="submit" class="admin-card-btn admin-card-btn--primary-outline">✅ Complete</button>
+                      </form>
+                      <form method="post" action="/admin/bookings/<%= b._id %>/status" onsubmit="return confirm('Cancel this confirmed appointment?');">
+                        <input type="hidden" name="status" value="cancelled">
+                        <button type="submit" class="admin-card-btn admin-card-btn--secondary-outline">Cancel</button>
+                      </form>
+                    <% } else { %>
+                      <span class="text-muted small fst-italic">Archived</span>
+                    <% } %>
+                    <button type="button" class="admin-card-btn admin-card-btn--light"
+                      data-bs-toggle="modal" data-bs-target="#rescheduleModal"
+                      data-id="<%= b._id %>" data-ref="<%= b.bookingReference %>"
+                      data-date="<%= b.date %>" data-time="<%= b.time %>"
+                      data-duration="<%= b.durationMinutes %>" data-name="<%= b.customerName %>">
+                      🗓️ Reschedule
+                    </button>
+                    <button type="button" class="admin-card-btn admin-card-btn--danger-outline"
+                      data-bs-toggle="modal" data-bs-target="#deleteBookingModal"
+                      data-id="<%= b._id %>" data-ref="<%= b.bookingReference %>"
+                      data-name="<%= b.customerName %>" data-service="<%= b.service %>"
+                      data-date="<%= b.date %>" data-time="<%= b.time %>">
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </div>
+              <% }) %>
             </div>
           </div>
 
@@ -443,7 +550,7 @@
                 </div>
 
                 <!-- Quick View / Navigation buttons -->
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                   <button type="button" class="btn btn-sm btn-outline-secondary" id="calPrevBtn" title="Previous Month">
                     ‹ Previous
                   </button>
@@ -609,8 +716,8 @@
                 <h4 class="fw-bold mb-0">Fingernail Services Catalog</h4>
                 <p class="text-secondary small mb-0">Manage services, prices, durations, active status, and group assignments.</p>
               </div>
-              <div class="d-flex align-items-center gap-2">
-                <select id="adminGroupFilter" class="form-select form-select-sm" style="min-width: 200px;">
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <select id="adminGroupFilter" class="form-select form-select-sm" style="max-width: 100%; min-width: 170px;">
                   <option value="all">📁 All Groups (<%= services.length %>)</option>
                   <% (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).forEach(g => { %>
                     <option value="<%= g.id %>">📁 <%= g.name %> (<%= g.servicesCount || 0 %>)</option>
@@ -622,9 +729,12 @@
               </div>
             </div>
 
-            <div class="glass-card p-0 bg-white overflow-hidden shadow-sm">
+            <!-- =============================================
+                 SERVICES — DESKTOP TABLE (≥1024px)
+                 ============================================= -->
+            <div class="glass-card p-0 bg-white overflow-hidden shadow-sm admin-desktop-table">
               <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="adminServicesTable">
+                <table class="table table-hover align-middle mb-0" id="adminServicesTable" style="min-width: 720px;">
                   <thead class="table-light small text-uppercase fw-bold">
                     <tr>
                       <th class="ps-3">Service Image & Name</th>
@@ -637,102 +747,157 @@
                     </tr>
                   </thead>
                   <tbody class="small">
-                    <% services.forEach(s=> { 
+                    <% services.forEach(s=> {
                          const currentGrp = (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).find(g => String(g.id) === String(s.groupId));
                     %>
                       <tr data-service-group="<%= s.groupId || 'uncategorized' %>">
                         <td class="ps-3">
                           <div class="d-flex align-items-center gap-2">
-                            <img
-                              src="<%= s.imageUrl || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=150&q=80' %>"
-                              alt="<%= s.name %>" class="rounded-3 border"
-                              style="width: 44px; height: 44px; object-fit: cover;">
+                            <img src="<%= s.imageUrl || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=150&q=80' %>" alt="<%= s.name %>" class="rounded-3 border" style="width:44px;height:44px;object-fit:cover;">
                             <div>
-                              <strong>
-                                <%= s.name %>
-                              </strong>
-                              <div class="text-muted small" style="max-width: 250px;">
-                                <%= s.description %>
-                              </div>
+                              <strong><%= s.name %></strong>
+                              <div class="text-muted small" style="max-width:250px;"><%= s.description %></div>
                             </div>
                           </div>
                         </td>
                         <td>
-                          <strong class="text-dark">
-                            <%= s.nameKm %>
-                          </strong>
-                          <div class="text-muted small" style="max-width: 250px;">
-                            <%= s.descriptionKm %>
-                          </div>
+                          <strong class="text-dark"><%= s.nameKm %></strong>
+                          <div class="text-muted small" style="max-width:250px;"><%= s.descriptionKm %></div>
                         </td>
-                        <td>
-                          <span class="badge bg-light text-dark border">
-                            📁 <%= currentGrp ? currentGrp.name : 'Uncategorized' %>
-                          </span>
-                        </td>
-                        <td>
-                          <span class="text-danger fw-bold fs-6">$<%= s.price %></span>
-                        </td>
-                        <td>
-                          ⏱️ <%= s.durationMinutes %> mins
-                        </td>
+                        <td><span class="badge bg-light text-dark border">📁 <%= currentGrp ? currentGrp.name : 'Uncategorized' %></span></td>
+                        <td><span class="text-danger fw-bold fs-6">$<%= s.price %></span></td>
+                        <td>⏱️ <%= s.durationMinutes %> mins</td>
                         <td>
                           <% if (s.isActive) { %>
                             <span class="badge bg-success-subtle text-success fw-bold">Active</span>
-                            <% } else { %>
-                              <span class="badge bg-secondary-subtle text-secondary fw-bold">Inactive</span>
-                              <% } %>
+                          <% } else { %>
+                            <span class="badge bg-secondary-subtle text-secondary fw-bold">Inactive</span>
+                          <% } %>
                         </td>
                         <td class="text-end pe-3">
-                          <!-- Quick Move Group Dropdown -->
-                          <div class="dropdown d-inline">
-                            <button class="btn btn-sm btn-outline-primary py-1 px-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Move to another group">
-                              Move
+                          <div class="admin-action-btn-group">
+                            <div class="dropdown d-inline">
+                              <button class="btn btn-sm btn-outline-primary py-1 px-2 dropdown-toggle" type="button" data-bs-toggle="dropdown">Move</button>
+                              <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
+                                <li class="dropdown-header text-muted">Move to Group:</li>
+                                <% (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).forEach(g => { %>
+                                  <li>
+                                    <form method="post" action="/admin/services/<%= s._id %>/move-group">
+                                      <input type="hidden" name="groupId" value="<%= g.id %>">
+                                      <button type="submit" class="dropdown-item small <%= String(s.groupId) === String(g.id) ? 'active' : '' %>">📁 <%= g.name %> (<%= g.nameKm %>)</button>
+                                    </form>
+                                  </li>
+                                <% }) %>
+                              </ul>
+                            </div>
+                            <form method="post" action="/admin/services/<%= s._id %>/toggle" class="d-inline">
+                              <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2"><%= s.isActive ? 'Deactivate' : 'Activate' %></button>
+                            </form>
+                            <button type="button" class="btn btn-sm btn-outline-dark py-1 px-2"
+                              data-bs-toggle="modal" data-bs-target="#editServiceModal"
+                              data-id="<%= s._id %>" data-name="<%= s.name %>" data-namekm="<%= s.nameKm %>"
+                              data-price="<%= s.price %>" data-duration="<%= s.durationMinutes %>"
+                              data-desc="<%= s.description %>" data-desckm="<%= s.descriptionKm %>"
+                              data-image="<%= s.imageUrl %>" data-groupid="<%= s.groupId || '' %>">
+                              Edit
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
-                              <li class="dropdown-header text-muted">Move to Group:</li>
-                              <% (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).forEach(g => { %>
-                                <li>
-                                  <form method="post" action="/admin/services/<%= s._id %>/move-group">
-                                    <input type="hidden" name="groupId" value="<%= g.id %>">
-                                    <button type="submit" class="dropdown-item small <%= String(s.groupId) === String(g.id) ? 'active' : '' %>">
-                                      📁 <%= g.name %> (<%= g.nameKm %>)
-                                    </button>
-                                  </form>
-                                </li>
-                              <% }) %>
-                            </ul>
+                            <form method="post" action="/admin/services/<%= s._id %>/delete" class="d-inline" onsubmit="return confirm('Delete this fingernail service?');">
+                              <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2">Delete</button>
+                            </form>
                           </div>
-
-                          <!-- Toggle Active -->
-                          <form method="post" action="/admin/services/<%= s._id %>/toggle" class="d-inline ms-1">
-                            <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2"
-                              title="Toggle active status">
-                              <%= s.isActive ? 'Deactivate' : 'Activate' %>
-                            </button>
-                          </form>
-
-                          <!-- Edit Button (Modal) -->
-                          <button type="button" class="btn btn-sm btn-outline-dark py-1 px-2 ms-1"
-                            data-bs-toggle="modal" data-bs-target="#editServiceModal" data-id="<%= s._id %>"
-                            data-name="<%= s.name %>" data-namekm="<%= s.nameKm %>" data-price="<%= s.price %>"
-                            data-duration="<%= s.durationMinutes %>" data-desc="<%= s.description %>"
-                            data-desckm="<%= s.descriptionKm %>" data-image="<%= s.imageUrl %>"
-                            data-groupid="<%= s.groupId || '' %>">
-                            Edit
-                          </button>
-
-                          <!-- Delete Service -->
-                          <form method="post" action="/admin/services/<%= s._id %>/delete" class="d-inline ms-1"
-                            onsubmit="return confirm('Delete this fingernail service?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2">Delete</button>
-                          </form>
                         </td>
                       </tr>
-                      <% }) %>
+                    <% }) %>
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            <!-- =============================================
+                 SERVICES — MOBILE CARDS (<1024px)
+                 ============================================= -->
+            <div class="admin-mobile-cards" id="adminServicesCards">
+              <% services.forEach(s=> {
+                   const currentGrp = (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).find(g => String(g.id) === String(s.groupId));
+              %>
+                <div class="admin-record-card" data-service-group="<%= s.groupId || 'uncategorized' %>">
+                  <!-- Card Header -->
+                  <div class="admin-card-header">
+                    <div class="d-flex align-items-center gap-2">
+                      <img src="<%= s.imageUrl || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=150&q=80' %>" alt="<%= s.name %>" class="admin-card-service-img">
+                      <div>
+                        <div class="admin-card-name"><%= s.name %></div>
+                        <div class="text-muted small"><%= s.nameKm %></div>
+                      </div>
+                    </div>
+                    <% if (s.isActive) { %>
+                      <span class="badge bg-success-subtle text-success fw-bold">Active</span>
+                    <% } else { %>
+                      <span class="badge bg-secondary-subtle text-secondary fw-bold">Inactive</span>
+                    <% } %>
+                  </div>
+                  <!-- Card Body -->
+                  <div class="admin-card-body">
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">📁 Group</span>
+                      <span class="admin-card-value"><span class="badge bg-light text-dark border">📁 <%= currentGrp ? currentGrp.name : 'Uncategorized' %></span></span>
+                    </div>
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">💰 Price</span>
+                      <span class="admin-card-value text-danger fw-bold">$<%= s.price %></span>
+                    </div>
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">⏱️ Duration</span>
+                      <span class="admin-card-value"><%= s.durationMinutes %> mins</span>
+                    </div>
+                    <% if (s.description) { %>
+                    <div class="admin-card-row admin-card-row--full">
+                      <span class="admin-card-label">📝 Description (EN)</span>
+                      <span class="admin-card-value text-muted small"><%= s.description %></span>
+                    </div>
+                    <% } %>
+                    <% if (s.descriptionKm) { %>
+                    <div class="admin-card-row admin-card-row--full">
+                      <span class="admin-card-label">📝 ពិពណ៌នា (KM)</span>
+                      <span class="admin-card-value text-muted small"><%= s.descriptionKm %></span>
+                    </div>
+                    <% } %>
+                  </div>
+                  <!-- Card Actions -->
+                  <div class="admin-card-actions">
+                    <div class="dropdown">
+                      <button class="admin-card-btn admin-card-btn--primary-outline dropdown-toggle" type="button" data-bs-toggle="dropdown">📁 Move Group</button>
+                      <ul class="dropdown-menu shadow-sm small">
+                        <li class="dropdown-header text-muted">Move to Group:</li>
+                        <% (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).forEach(g => { %>
+                          <li>
+                            <form method="post" action="/admin/services/<%= s._id %>/move-group">
+                              <input type="hidden" name="groupId" value="<%= g.id %>">
+                              <button type="submit" class="dropdown-item small <%= String(s.groupId) === String(g.id) ? 'active' : '' %>">📁 <%= g.name %></button>
+                            </form>
+                          </li>
+                        <% }) %>
+                      </ul>
+                    </div>
+                    <form method="post" action="/admin/services/<%= s._id %>/toggle">
+                      <button type="submit" class="admin-card-btn admin-card-btn--secondary-outline">
+                        <%= s.isActive ? '🔴 Deactivate' : '🟢 Activate' %>
+                      </button>
+                    </form>
+                    <button type="button" class="admin-card-btn admin-card-btn--dark-outline"
+                      data-bs-toggle="modal" data-bs-target="#editServiceModal"
+                      data-id="<%= s._id %>" data-name="<%= s.name %>" data-namekm="<%= s.nameKm %>"
+                      data-price="<%= s.price %>" data-duration="<%= s.durationMinutes %>"
+                      data-desc="<%= s.description %>" data-desckm="<%= s.descriptionKm %>"
+                      data-image="<%= s.imageUrl %>" data-groupid="<%= s.groupId || '' %>">
+                      ✏️ Edit
+                    </button>
+                    <form method="post" action="/admin/services/<%= s._id %>/delete" onsubmit="return confirm('Delete this fingernail service?');">
+                      <button type="submit" class="admin-card-btn admin-card-btn--danger-outline">🗑️ Delete</button>
+                    </form>
+                  </div>
+                </div>
+              <% }) %>
             </div>
           </div>
 
@@ -748,12 +913,15 @@
               </button>
             </div>
 
-            <div class="glass-card p-0 bg-white overflow-hidden shadow-sm">
+            <!-- =============================================
+                 SERVICE GROUPS — DESKTOP TABLE (≥1024px)
+                 ============================================= -->
+            <div class="glass-card p-0 bg-white overflow-hidden shadow-sm admin-desktop-table">
               <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" style="min-width: 580px;">
                   <thead class="table-light small text-uppercase fw-bold">
                     <tr>
-                      <th class="ps-3" style="width: 70px;">Order</th>
+                      <th class="ps-3" style="width:70px;">Order</th>
                       <th>Group Name (English)</th>
                       <th>Khmer Name</th>
                       <th>Description</th>
@@ -766,17 +934,11 @@
                     <% (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).forEach(g => { %>
                       <tr>
                         <td class="ps-3 fw-bold text-muted">#<%= g.displayOrder %></td>
+                        <td><strong>📁 <%= g.name %></strong></td>
+                        <td><strong class="text-dark"><%= g.nameKm %></strong></td>
+                        <td><div class="text-muted small" style="max-width:280px;"><%= g.description || '-' %></div></td>
                         <td>
-                          <strong>📁 <%= g.name %></strong>
-                        </td>
-                        <td>
-                          <strong class="text-dark"><%= g.nameKm %></strong>
-                        </td>
-                        <td>
-                          <div class="text-muted small" style="max-width: 280px;"><%= g.description || '-' %></div>
-                        </td>
-                        <td>
-                          <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-6">
+                          <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
                             <%= g.servicesCount || 0 %> <%= (g.servicesCount === 1) ? 'service' : 'services' %>
                           </span>
                         </td>
@@ -788,24 +950,88 @@
                           <% } %>
                         </td>
                         <td class="text-end pe-3">
-                          <form method="post" action="/admin/service-groups/<%= g.id %>/toggle" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Toggle active status">
-                              <%= g.isActive ? 'Deactivate' : 'Activate' %>
+                          <div class="admin-action-btn-group">
+                            <form method="post" action="/admin/service-groups/<%= g.id %>/toggle" class="d-inline">
+                              <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2"><%= g.isActive ? 'Deactivate' : 'Activate' %></button>
+                            </form>
+                            <button type="button" class="btn btn-sm btn-outline-dark py-1 px-2 edit-group-btn"
+                              data-bs-toggle="modal" data-bs-target="#editGroupModal"
+                              data-id="<%= g.id %>" data-name="<%= g.name %>" data-namekm="<%= g.nameKm %>"
+                              data-desc="<%= g.description %>" data-desckm="<%= g.descriptionKm %>"
+                              data-order="<%= g.displayOrder %>">
+                              Edit
                             </button>
-                          </form>
-                          <button type="button" class="btn btn-sm btn-outline-dark py-1 px-2 ms-1 edit-group-btn"
-                            data-bs-toggle="modal" data-bs-target="#editGroupModal"
-                            data-id="<%= g.id %>" data-name="<%= g.name %>" data-namekm="<%= g.nameKm %>"
-                            data-desc="<%= g.description %>" data-desckm="<%= g.descriptionKm %>"
-                            data-order="<%= g.displayOrder %>">
-                            Edit
-                          </button>
+                          </div>
                         </td>
                       </tr>
                     <% }) %>
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            <!-- =============================================
+                 SERVICE GROUPS — MOBILE CARDS (<1024px)
+                 ============================================= -->
+            <div class="admin-mobile-cards">
+              <% (typeof serviceGroups !== 'undefined' && serviceGroups ? serviceGroups : []).forEach(g => { %>
+                <div class="admin-record-card">
+                  <!-- Card Header -->
+                  <div class="admin-card-header">
+                    <div>
+                      <div class="admin-card-name">📁 <%= g.name %></div>
+                      <div class="text-muted small"><%= g.nameKm %></div>
+                    </div>
+                    <% if (g.isActive) { %>
+                      <span class="badge bg-success-subtle text-success fw-bold">Active</span>
+                    <% } else { %>
+                      <span class="badge bg-secondary-subtle text-secondary fw-bold">Inactive</span>
+                    <% } %>
+                  </div>
+                  <!-- Card Body -->
+                  <div class="admin-card-body">
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">🔢 Display Order</span>
+                      <span class="admin-card-value fw-bold">#<%= g.displayOrder %></span>
+                    </div>
+                    <div class="admin-card-row">
+                      <span class="admin-card-label">💅 Services</span>
+                      <span class="admin-card-value">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                          <%= g.servicesCount || 0 %> <%= (g.servicesCount === 1) ? 'service' : 'services' %>
+                        </span>
+                      </span>
+                    </div>
+                    <% if (g.description) { %>
+                    <div class="admin-card-row admin-card-row--full">
+                      <span class="admin-card-label">📝 Description</span>
+                      <span class="admin-card-value text-muted small"><%= g.description %></span>
+                    </div>
+                    <% } %>
+                    <% if (g.descriptionKm) { %>
+                    <div class="admin-card-row admin-card-row--full">
+                      <span class="admin-card-label">📝 ពិពណ៌នា</span>
+                      <span class="admin-card-value text-muted small"><%= g.descriptionKm %></span>
+                    </div>
+                    <% } %>
+                  </div>
+                  <!-- Card Actions -->
+                  <div class="admin-card-actions">
+                    <form method="post" action="/admin/service-groups/<%= g.id %>/toggle">
+                      <button type="submit" class="admin-card-btn admin-card-btn--secondary-outline">
+                        <%= g.isActive ? '🔴 Deactivate' : '🟢 Activate' %>
+                      </button>
+                    </form>
+                    <button type="button" class="admin-card-btn admin-card-btn--dark-outline edit-group-btn"
+                      data-bs-toggle="modal" data-bs-target="#editGroupModal"
+                      data-id="<%= g.id %>" data-name="<%= g.name %>" data-namekm="<%= g.nameKm %>"
+                      data-desc="<%= g.description %>" data-desckm="<%= g.descriptionKm %>"
+                      data-order="<%= g.displayOrder %>">
+                      ✏️ Edit Group
+                    </button>
+                  </div>
+                </div>
+              <% }) %>
             </div>
           </div>
 
@@ -897,10 +1123,10 @@
                   <p class="text-secondary small">Clients will not be allowed to book on dates added to this list.</p>
 
                   <!-- Add Day Off Form -->
-                  <form method="post" action="/admin/daysoff/add" class="d-flex gap-2 mb-3">
+                  <form method="post" action="/admin/daysoff/add" class="d-flex flex-column flex-sm-row gap-2 mb-3">
                     <input type="date" name="dayOffDate" class="form-control form-control-sm" required
                       min="<%= today %>">
-                    <button type="submit" class="btn btn-sm btn-dark text-nowrap">+ Add Day Off</button>
+                    <button type="submit" class="btn btn-sm btn-dark text-nowrap py-2" style="min-height: 38px;">+ Add Day Off</button>
                   </form>
 
                   <!-- Days Off List -->
@@ -929,7 +1155,7 @@
 
   <!-- MODAL: ADD FINGERNAIL SERVICE -->
   <div class="modal fade" id="addServiceModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
       <div class="modal-content">
         <form method="post" action="/admin/services" id="addServiceForm">
           <!-- Hidden field: holds the Supabase Storage URL when admin uses upload -->
@@ -1029,7 +1255,7 @@
 
   <!-- MODAL: EDIT FINGERNAIL SERVICE -->
   <div class="modal fade" id="editServiceModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
       <div class="modal-content">
         <form id="editServiceForm" method="post" action="">
           <!-- Hidden field: holds the Supabase Storage URL when admin uses upload -->
@@ -1135,7 +1361,7 @@
 
   <!-- MODAL: ADD SERVICE GROUP -->
   <div class="modal fade" id="addGroupModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <form method="post" action="/admin/service-groups">
           <div class="modal-header">
@@ -1175,7 +1401,7 @@
 
   <!-- MODAL: EDIT SERVICE GROUP -->
   <div class="modal fade" id="editGroupModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <form id="editGroupForm" method="post" action="">
           <div class="modal-header">
@@ -1215,7 +1441,7 @@
 
   <!-- MODAL: RESCHEDULE APPOINTMENT -->
   <div class="modal fade" id="rescheduleModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <form id="rescheduleForm" method="post" action="">
           <div class="modal-header">
@@ -1253,7 +1479,7 @@
 
   <!-- MODAL: DELETE BOOKING CONFIRMATION -->
   <div class="modal fade" id="deleteBookingModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content shadow">
         <form id="deleteBookingForm" method="post" action="">
           <div class="modal-header bg-danger text-white">
@@ -1540,18 +1766,20 @@
       });
     }
 
-    // Real-time Service Group Table Filter in Admin Dashboard
+    // Real-time Service Group Table & Card Filter in Admin Dashboard
     const adminGroupFilter = document.getElementById('adminGroupFilter');
     if (adminGroupFilter) {
       adminGroupFilter.addEventListener('change', function () {
         const selectedGroup = this.value;
-        const rows = document.querySelectorAll('#adminServicesTable tbody tr');
-        rows.forEach(row => {
-          if (selectedGroup === 'all' || row.getAttribute('data-service-group') === selectedGroup) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
+        // Filter desktop table rows
+        document.querySelectorAll('#adminServicesTable tbody tr').forEach(row => {
+          const match = selectedGroup === 'all' || row.getAttribute('data-service-group') === selectedGroup;
+          row.style.display = match ? '' : 'none';
+        });
+        // Filter mobile cards
+        document.querySelectorAll('#adminServicesCards .admin-record-card').forEach(card => {
+          const match = selectedGroup === 'all' || card.getAttribute('data-service-group') === selectedGroup;
+          card.style.display = match ? '' : 'none';
         });
       });
     }
@@ -1751,7 +1979,7 @@
         let badgesHtml = '';
         if (total > 0) {
           badgesHtml = `
-            <div class="cal-booking-badge">${total} booking${total > 1 ? 's' : ''}</div>
+            <div class="cal-booking-badge"><span class="cal-booking-num">${total}</span><span class="cal-booking-badge-text"> booking${total > 1 ? 's' : ''}</span></div>
             <div class="cal-status-row">
               ${dayData.pending > 0 ? `<span class="cal-status-dot cal-dot-pending" title="${dayData.pending} Pending">🟡${dayData.pending}</span>` : ''}
               ${dayData.confirmed > 0 ? `<span class="cal-status-dot cal-dot-confirmed" title="${dayData.confirmed} Confirmed">🟢${dayData.confirmed}</span>` : ''}
@@ -1930,7 +2158,7 @@
             ${b.notes ? `<div class="small text-muted fst-italic mb-2 bg-light p-2 rounded">"${escapeHtml(b.notes)}"</div>` : ''}
             ${b.adminNotes ? `<div class="small text-secondary mb-2 bg-warning-subtle p-2 rounded"><strong>Admin:</strong> ${escapeHtml(b.adminNotes)}</div>` : ''}
 
-            <div class="d-flex justify-content-end align-items-center gap-1 pt-1 border-top">
+            <div class="d-flex flex-wrap justify-content-end align-items-center gap-1 pt-2 border-top">
               ${actionButtons}
               ${rescheduleBtn}
               ${deleteBtn}
@@ -2080,6 +2308,53 @@
         updateMonthPickerValue();
         fetchCalendarSummary();
         fetchDateBookings(calSelectedDate);
+      }
+
+      // Admin Mobile Drawer Interaction
+      const adminToggleBtn = document.getElementById('adminMenuToggle');
+      const adminDrawer = document.getElementById('adminMobileDrawer');
+      if (adminToggleBtn && adminDrawer) {
+        adminToggleBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const isOpen = adminDrawer.classList.toggle('show');
+          adminToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          adminToggleBtn.innerHTML = isOpen ? '✕' : '☰';
+        });
+
+        document.addEventListener('click', function(e) {
+          if (!adminDrawer.contains(e.target) && !adminToggleBtn.contains(e.target) && adminDrawer.classList.contains('show')) {
+            adminDrawer.classList.remove('show');
+            adminToggleBtn.setAttribute('aria-expanded', 'false');
+            adminToggleBtn.innerHTML = '☰';
+          }
+        });
+
+        document.querySelectorAll('.admin-drawer-tab-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-tab-target');
+            const tabEl = document.getElementById(targetId);
+            if (tabEl) {
+              const tabInstance = bootstrap.Tab.getOrCreateInstance(tabEl);
+              tabInstance.show();
+            }
+            document.querySelectorAll('.admin-drawer-tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            adminDrawer.classList.remove('show');
+            adminToggleBtn.setAttribute('aria-expanded', 'false');
+            adminToggleBtn.innerHTML = '☰';
+          });
+        });
+      }
+
+      // Reset filter button helper: clears form inputs immediately
+      const adminResetBtn = document.getElementById('adminResetFilterBtn');
+      if (adminResetBtn) {
+        adminResetBtn.addEventListener('click', function() {
+          const form = adminResetBtn.closest('form');
+          if (form) {
+            form.querySelectorAll('input:not([type="hidden"]), select').forEach(el => el.value = '');
+          }
+        });
       }
     })();
   </script>

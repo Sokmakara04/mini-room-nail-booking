@@ -3,50 +3,110 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mini Room Nail & Eyelash</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= salonName %> | <%= lang === 'km' ? 'ស្ទូឌីយោថែរក្សាក្រចកដៃកម្រិតខ្ពស់' : 'Premier Fingernail Studio & Art' %></title>
   <link rel="icon" type="image/png" href="/images/favicon.png">
   <link rel="shortcut icon" href="/favicon.ico">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 
-<body>
-  <!-- Top Navigation -->
+<body class="has-bottom-nav">
+  <!-- Top Navigation (Compact, App-Like) -->
   <nav class="salon-nav">
-    <div class="container d-flex align-items-center justify-content-between">
-      <a class="salon-brand" href="/">
-        💅 <%= salonName %>
+    <div class="container d-flex align-items-center justify-content-between position-relative">
+      <a class="salon-brand" href="/?lang=<%= lang %>">
+        <span class="brand-logo-icon">💅</span>
+        <span><%= salonName %></span>
       </a>
 
-      <div class="d-flex align-items-center gap-3">
-        <a class="nav-link d-none d-md-inline" href="/services">
+      <div class="d-flex align-items-center gap-2 gap-md-3">
+        <a class="nav-link d-none d-md-inline" href="/services?lang=<%= lang %>">
           <%= lang==='km' ? 'សេវាកម្មក្រចក' : 'Nail Services' %>
         </a>
         <a class="nav-link d-none d-md-inline" href="#location">
           <%= lang==='km' ? 'ទីតាំងហាង' : 'Our Location' %>
         </a>
-        <a class="nav-link d-none d-md-inline" href="/status">
+        <a class="nav-link d-none d-md-inline" href="/status?lang=<%= lang %>">
           <%= lang==='km' ? 'ពិនិត្យការកក់' : 'Check Status' %>
         </a>
 
         <!-- Language Switcher -->
         <div class="lang-switch">
-          <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>">EN</a>
-          <a href="?lang=km" class="<%= lang === 'km' ? 'active' : '' %>">ខ្មែរ</a>
+          <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>" aria-label="English">EN</a>
+          <a href="?lang=km" class="<%= lang === 'km' ? 'active' : '' %>" aria-label="Khmer">ខ្មែរ</a>
         </div>
 
-        <a class="btn-nail btn-sm d-none d-sm-inline-flex" href="/book">
+        <a class="btn-nail btn-nail-sm d-none d-sm-inline-flex" href="/book?lang=<%= lang %>">
           <%= lang==='km' ? 'កក់ណាត់ជួប' : 'Book Appointment' %>
+        </a>
+
+        <!-- Mobile Menu Toggle Button -->
+        <button class="salon-menu-toggle" id="salonMenuToggle" type="button" aria-label="<%= lang==='km' ? 'បើកបញ្ជីម៉ឺនុយ' : 'Toggle navigation' %>" aria-expanded="false">
+          ☰
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div class="salon-mobile-drawer" id="salonMobileDrawer">
+      <div class="salon-mobile-nav-links">
+        <a class="nav-link active" href="/?lang=<%= lang %>">
+          🏠 <%= lang==='km' ? 'ទំព័រដើម' : 'Home' %>
+        </a>
+        <a class="nav-link" href="/services?lang=<%= lang %>">
+          💅 <%= lang==='km' ? 'សេវាកម្មក្រចក' : 'Nail Services' %>
+        </a>
+        <a class="nav-link" href="#location">
+          📍 <%= lang==='km' ? 'ទីតាំងហាង' : 'Our Location' %>
+        </a>
+        <a class="nav-link" href="/status?lang=<%= lang %>">
+          🔍 <%= lang==='km' ? 'ពិនិត្យការកក់' : 'Check Status' %>
+        </a>
+        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">
+          👤 <%= lang==='km' ? 'ព័ត៌មានអតិថិជន & ហាង' : 'Profile & Salon Info' %>
+        </a>
+      </div>
+      <div class="salon-mobile-actions">
+        <a class="btn-nail w-100 py-3 justify-content-center" href="/book?lang=<%= lang %>">
+          📅 <%= lang==='km' ? 'កក់ណាត់ជួបឥឡូវនេះ' : 'Book Appointment' %>
         </a>
       </div>
     </div>
   </nav>
 
+  <!-- Quick Action Chips (App Stories Bar) -->
+  <div class="bg-white border-bottom py-2">
+    <div class="container">
+      <div class="quick-action-bar">
+        <a href="/book?lang=<%= lang %>" class="quick-action-chip" style="background: var(--primary-subtle); border-color: var(--primary-border); color: var(--primary);">
+          <span>📅</span>
+          <span><%= lang === 'km' ? 'កក់ណាត់ជួប' : 'Book Appointment' %></span>
+        </a>
+        <a href="/services?lang=<%= lang %>" class="quick-action-chip">
+          <span>💅</span>
+          <span><%= lang === 'km' ? 'តារាងសេវាកម្ម' : 'Nail Menu' %></span>
+        </a>
+        <a href="#location" class="quick-action-chip">
+          <span>🗺️</span>
+          <span><%= lang === 'km' ? 'មើលផ្លូវទៅហាង' : 'Directions' %></span>
+        </a>
+        <a href="/status?lang=<%= lang %>" class="quick-action-chip">
+          <span>🔍</span>
+          <span><%= lang === 'km' ? 'ពិនិត្យការកក់' : 'My Bookings' %></span>
+        </a>
+        <a href="https://t.me/miniroomnail_bot" target="_blank" rel="noopener noreferrer" class="quick-action-chip">
+          <span>✈️</span>
+          <span><%= lang === 'km' ? 'Telegram Bot' : 'Telegram Bot' %></span>
+        </a>
+      </div>
+    </div>
+  </div>
+
   <!-- Hero Section -->
   <header class="hero-nail">
-    <div class="container py-4">
-      <div class="row align-items-center g-5">
+    <div class="container py-2 py-md-4">
+      <div class="row align-items-center g-4 g-lg-5">
         <div class="col-lg-7">
           <div class="hero-eyebrow">
             💅 <%= lang==='km' ? 'សេវាកម្មថែរក្សាក្រចកដៃផ្តាច់មុខ' : 'Exclusive Fingernail Art & Care' %>
@@ -54,60 +114,73 @@
           <h1 class="hero-title">
             <% if (lang==='km' ) { %>
               សម្រស់និងភាពទាក់ទាញ<br><em>ចាប់ផ្តើមពីចុងម្រាមដៃ</em>
-              <% } else { %>
-                Elevate your style with<br><em>masterful nail artistry.</em>
-                <% } %>
+            <% } else { %>
+              Elevate your style with<br><em>masterful nail artistry.</em>
+            <% } %>
           </h1>
           <p class="hero-lead">
             <% if (lang==='km' ) { %>
               សូមស្វាគមន៍មកកាន់ស្ទូឌីយោក្រចកដៃទំនើប។ យើងខ្ញុំផ្ដល់ជូននូវការកាត់តម្រឹម សម្អាត លាបជែល
               និងគូរម៉ូដសិល្បៈក្រចកដៃយ៉ាងផ្ចិតផ្ចង់បំផុត។
-              <% } else { %>
-                Indulge in tailored fingernail treatments, precision manicures, chip-free gel coatings, and bespoke nail
-                art crafted by certified artists.
-                <% } %>
+            <% } else { %>
+              Indulge in tailored fingernail treatments, precision manicures, chip-free gel coatings, and bespoke nail
+              art crafted by certified artists.
+            <% } %>
           </p>
-          <div class="d-flex flex-wrap gap-3">
-            <a class="btn-nail" href="/book">
-              📅 <%= lang==='km' ? 'កក់ការណាត់ឥឡូវនេះ' : 'Book an Appointment' %>
+          <div class="d-flex flex-wrap gap-2 gap-sm-3 mb-4">
+            <a class="btn-nail btn-nail-lg" href="/book?lang=<%= lang %>">
+              📅 <%= lang==='km' ? 'កក់ការណាត់ឥឡូវនេះ' : 'Book Appointment' %>
             </a>
-            <a class="btn-outline-nail" href="/services">
+            <a class="btn-outline-nail btn-nail-lg" href="/services?lang=<%= lang %>">
               💅 <%= lang==='km' ? 'មើលសេវាកម្មទាំងអស់' : 'Explore Nail Menu' %>
             </a>
           </div>
 
-          <div class="mt-4 pt-2 text-secondary small d-flex flex-wrap gap-4">
-            <div>⏰ <%= settings.openingTime %> - <%= settings.closingTime %> (<%= lang==='km' ? 'រៀងរាល់ថ្ងៃ'
-                    : 'Mon - Sun' %>)</div>
+          <div class="text-secondary small d-flex flex-wrap gap-3 gap-sm-4 pt-1">
+            <div class="d-flex align-items-center gap-1">
+              <span>⏰</span>
+              <span><%= settings.openingTime %> - <%= settings.closingTime %> (<%= lang==='km' ? 'រៀងរាល់ថ្ងៃ' : 'Mon - Sun' %>)</span>
+            </div>
             <% if (settings.salonPhone) { %>
-              <div>📞 <a href="tel:<%= settings.salonPhone %>" class="text-decoration-none text-secondary">
+              <div class="d-flex align-items-center gap-1">
+                <span>📞</span>
+                <a href="tel:<%= settings.salonPhone %>" class="text-decoration-none text-secondary">
                   <%= settings.salonPhone %>
-                </a></div>
-              <% } %>
-                <div>✈️ <a href="https://t.me/miniroom11" target="_blank"
-                    class="text-decoration-none text-secondary">@miniroom11</a></div>
+                </a>
+              </div>
+            <% } %>
+            <div class="d-flex align-items-center gap-1">
+              <span>✈️</span>
+              <a href="https://t.me/miniroom11" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary">
+                @miniroom11
+              </a>
+            </div>
           </div>
         </div>
 
         <div class="col-lg-5">
-          <div class="glass-card text-center p-4">
-            <div class="mb-3">
+          <div class="glass-card text-center p-3 p-sm-4">
+            <div class="mb-3 position-relative rounded-4 overflow-hidden" style="max-height: 240px;">
               <img src="https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=700&q=80"
-                alt="Nail Art Studio" class="img-fluid rounded-4 shadow-sm"
-                style="max-height: 280px; width: 100%; object-fit: cover;">
+                alt="Nail Art Studio" class="img-fluid w-100"
+                style="height: 220px; object-fit: cover;">
+              <div class="position-absolute bottom-0 start-0 end-0 p-2 text-white text-center small fw-bold" style="background: linear-gradient(0deg, rgba(35,24,29,0.85) 0%, transparent 100%);">
+                <%= salonName %> Studio
+              </div>
             </div>
-            <h5 class="fw-bold mb-1">
+            <h5 class="fw-bold mb-1 h6">
               <%= lang==='km' ? 'មានការកក់រួចហើយ?' : 'Already have a booking?' %>
             </h5>
             <p class="text-secondary small mb-3">
               <%= lang==='km' ? 'បញ្ចូលលេខកូដ Reference ឬលេខទូរស័ព្ទដើម្បីពិនិត្យស្ថានភាព'
                 : 'Check confirmation status via reference code or phone number.' %>
             </p>
-            <form action="/status" method="get" class="d-flex gap-2">
-              <input type="text" name="query" class="form-control form-control-sm"
+            <form action="/status" method="get" class="d-flex flex-column flex-sm-row gap-2">
+              <input type="hidden" name="lang" value="<%= lang %>">
+              <input type="text" name="query" class="form-control"
                 placeholder="<%= lang === 'km' ? 'ឧទាហរណ៍៖ NL-XXXXXX ឬលេខទូរស័ព្ទ' : 'e.g. NL-XXXXXX or Phone' %>"
                 required>
-              <button type="submit" class="btn btn-sm btn-dark">
+              <button type="submit" class="btn btn-dark text-nowrap px-4 py-2" style="min-height: 48px; border-radius: var(--radius-pill); font-weight: 700;">
                 <%= lang==='km' ? 'ស្វែងរក' : 'Lookup' %>
               </button>
             </form>
@@ -118,30 +191,30 @@
   </header>
 
   <!-- Featured Fingernail Services -->
-  <section class="py-5">
+  <section class="py-4 py-md-5">
     <div class="container">
-      <div class="d-flex justify-content-between align-items-end mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3 mb-md-4">
         <div>
-          <span class="text-uppercase fw-bold text-danger small" style="letter-spacing: 0.1em;">
+          <span class="hero-eyebrow mb-1">
             <%= lang==='km' ? 'សេវាកម្មពេញនិយម' : 'FEATURED SERVICES' %>
           </span>
-          <h2 class="fw-bold text-dark mt-1">
-            <%= lang==='km' ? 'សេវាកម្មថែទាំនិងរចនាក្រចកដៃ' : 'Fingernail Treatments' %>
+          <h2 class="fw-bold text-dark mt-1 h3">
+            <%= lang==='km' ? 'សេវាកម្មថែទាំនិងរចនាក្រចកដៃ' : 'Signature Fingernail Treatments' %>
           </h2>
         </div>
-        <a href="/services" class="btn btn-outline-dark btn-sm rounded-pill">
+        <a href="/services?lang=<%= lang %>" class="btn btn-outline-dark btn-sm rounded-pill px-3 py-2" style="min-height: 40px; display: inline-flex; align-items: center; font-weight: 700;">
           <%= lang==='km' ? 'មើលទាំងអស់ →' : 'View All →' %>
         </a>
       </div>
 
-      <div class="row g-4">
+      <div class="row g-3 g-md-4">
         <% services.slice(0, 3).forEach(s=> { %>
-          <div class="col-md-4">
+          <div class="col-12 col-md-6 col-lg-4">
             <div class="service-card">
               <div class="service-img-wrap">
                 <img
                   src="<%= s.imageUrl || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=600&q=80' %>"
-                  alt="<%= s.name %>">
+                  alt="<%= s.name %>" loading="lazy">
                 <span class="service-price-badge">$<%= s.price %></span>
               </div>
               <div class="service-body">
@@ -155,62 +228,62 @@
                 <p class="service-desc">
                   <%= lang==='km' ? (s.descriptionKm || s.description) : (s.description || s.descriptionKm) %>
                 </p>
-                <a href="/book?serviceId=<%= s._id %>" class="btn-nail w-100 mt-auto">
-                  <%= lang==='km' ? 'កក់សេវាកម្មនេះ' : 'Book This Service' %>
+                <a href="/book?serviceId=<%= s._id %>&lang=<%= lang %>" class="btn-nail w-100 mt-auto">
+                  📅 <%= lang==='km' ? 'កក់សេវាកម្មនេះ' : 'Book This Service' %>
                 </a>
               </div>
             </div>
           </div>
-          <% }) %>
+        <% }) %>
       </div>
     </div>
   </section>
 
   <!-- Why Choose Us -->
-  <section class="py-5" style="background: #f4eaec;">
+  <section class="py-4 py-md-5" style="background: var(--bg-cream);">
     <div class="container">
-      <div class="text-center max-w-700 mx-auto mb-5">
-        <h2 class="fw-bold">
+      <div class="text-center max-w-700 mx-auto mb-4 mb-md-5">
+        <h2 class="fw-bold h3">
           <%= lang==='km' ? 'ហេតុអ្វីជ្រើសរើសស្ទូឌីយោក្រចកយើងខ្ញុំ?' : 'Why Choose Our Nail Studio?' %>
         </h2>
-        <p class="text-secondary">
+        <p class="text-secondary small">
           <%= lang==='km' ? 'យើងខ្ញុំយកចិត្តទុកដាក់ខ្ពស់លើអនាម័យ គុណភាពថ្នាំលាប និងភាពទាក់ទាញនៃក្រចកដៃរបស់អ្នក'
             : 'Dedicated strictly to pristine fingernail hygiene, top-tier gels, and individualized nail designs.' %>
         </p>
       </div>
 
-      <div class="row g-4 text-center">
-        <div class="col-md-4">
-          <div class="glass-card h-100 p-4">
+      <div class="row g-3 g-md-4 text-center">
+        <div class="col-12 col-md-4">
+          <div class="glass-card h-100 p-3 p-sm-4">
             <div class="fs-1 mb-2">✨</div>
-            <h5 class="fw-bold">
+            <h5 class="fw-bold h6">
               <%= lang==='km' ? 'អនាម័យនិងសុវត្ថិភាព 100%' : '100% Medical-Grade Sterilization' %>
             </h5>
-            <p class="text-secondary small">
+            <p class="text-secondary small mb-0">
               <%= lang==='km' ? 'ឧបករណ៍ទាំងអស់ត្រូវបានសម្លាប់មេរោគយ៉ាងម៉ត់ចត់មុននឹងបម្រើសេវាកម្មដល់អតិថិជនម្នាក់ៗ។'
                 : 'All instruments undergo medical autoclave sterilization for uncompromising hygiene.' %>
             </p>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="glass-card h-100 p-4">
+        <div class="col-12 col-md-4">
+          <div class="glass-card h-100 p-3 p-sm-4">
             <div class="fs-1 mb-2">💎</div>
-            <h5 class="fw-bold">
+            <h5 class="fw-bold h6">
               <%= lang==='km' ? 'ថ្នាំជែលនិងសម្ភារៈនាំចូល' : 'Premium Non-Toxic Products' %>
             </h5>
-            <p class="text-secondary small">
+            <p class="text-secondary small mb-0">
               <%= lang==='km' ? 'ប្រើប្រាស់ថ្នាំលាបជែលកម្រិតខ្ពស់ មិនខូចក្រចក ជាប់បានយូរ និងគ្មានជាតិគីមីគ្រោះថ្នាក់។'
                 : 'Gentle formulas free from toxic chemicals that preserve the strength of natural nail beds.' %>
             </p>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="glass-card h-100 p-4">
+        <div class="col-12 col-md-4">
+          <div class="glass-card h-100 p-3 p-sm-4">
             <div class="fs-1 mb-2">🎨</div>
-            <h5 class="fw-bold">
+            <h5 class="fw-bold h6">
               <%= lang==='km' ? 'អ្នកជំនាញម៉ូដក្រចកស្ទាត់ជំនាញ' : 'Custom Nail Art Masters' %>
             </h5>
-            <p class="text-secondary small">
+            <p class="text-secondary small mb-0">
               <%= lang==='km' ? 'ជាងក្រចកមានបទពិសោធន៍ខ្ពស់ ច្នៃម៉ូដបានគ្រប់ទម្រង់តាមក្តីស្រមៃរបស់បង។'
                 : 'From French tips to intricate 3D chrome lines, we bring your dream inspiration to life.' %>
             </p>
@@ -221,18 +294,18 @@
   </section>
 
   <!-- Our Location Section -->
-  <section id="location" class="py-5" style="background: linear-gradient(180deg, #f4eaec 0%, #faf6f5 100%);">
+  <section id="location" class="py-4 py-md-5">
     <div class="container">
-      <div class="glass-card p-4 p-md-5 border-0 shadow-sm" style="background: #ffffff; border-radius: 1.5rem;">
+      <div class="glass-card p-3 p-sm-4 p-md-5 border-0 shadow-sm" style="background: #ffffff; border-radius: 1.5rem;">
         <div class="row align-items-center g-4">
           <div class="col-lg-7">
-            <span class="hero-eyebrow text-uppercase" style="letter-spacing: 0.1em;">
+            <span class="hero-eyebrow text-uppercase">
               📍 <%= lang === 'km' ? 'ទីតាំងហាង' : 'OUR LOCATION' %>
             </span>
-            <h2 class="fw-bold mt-2 mb-3" style="color: var(--plum);">
+            <h2 class="fw-bold mt-2 mb-3 h3" style="color: var(--plum);">
               <%= lang === 'km' ? 'ទីតាំងហាង និងផ្លូវធ្វើដំណើរ' : 'Our Studio Location' %>
             </h2>
-            <p class="text-secondary mb-4" style="font-size: 1.05rem; line-height: 1.7;">
+            <p class="text-secondary mb-4" style="line-height: 1.7;">
               <% if (lang === 'km') { %>
                 សូមស្វាគមន៍មកកាន់ <strong><%= salonName %></strong>! បងអាចស្វែងរកទីតាំង និងមើលផ្លូវធ្វើដំណើរមកកាន់ហាងយើងខ្ញុំយ៉ាងងាយស្រួលនៅលើ Google Maps ដោយចុចប៊ូតុងខាងក្រោម។
               <% } else { %>
@@ -240,19 +313,19 @@
               <% } %>
             </p>
 
-            <div class="d-flex flex-wrap gap-3 mb-4">
+            <div class="d-flex flex-wrap gap-2 gap-sm-3 mb-4">
               <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" 
                  target="_blank" 
                  rel="noopener noreferrer" 
-                 class="btn-nail btn-lg d-inline-flex align-items-center gap-2 text-decoration-none shadow-sm"
+                 class="btn-nail btn-nail-lg text-decoration-none shadow-sm"
                  id="getDirectionsBtn">
                 <span>🗺️</span>
-                <span><%= lang === 'km' ? 'មើលផ្លូវទៅហាង' : 'Get Directions' %></span>
+                <span><%= lang === 'km' ? 'មើលផ្លូវទៅហាង (Google Maps)' : 'Get Directions (Google Maps)' %></span>
                 <span class="small opacity-75">↗</span>
               </a>
             </div>
 
-            <div class="pt-3 border-top d-flex flex-wrap gap-4 text-secondary small">
+            <div class="pt-3 border-top d-flex flex-wrap gap-3 gap-sm-4 text-secondary small">
               <div class="d-flex align-items-center gap-2">
                 <span class="fs-6">⏰</span>
                 <span><%= settings.openingTime %> - <%= settings.closingTime %> (<%= lang === 'km' ? 'រៀងរាល់ថ្ងៃ' : 'Mon - Sun' %>)</span>
@@ -269,9 +342,9 @@
           </div>
 
           <div class="col-lg-5 text-center">
-            <div class="p-4 rounded-4" style="background: linear-gradient(135deg, #fbeff2 0%, #f7e2e7 100%); border: 1px solid var(--border);">
+            <div class="p-4 rounded-4" style="background: linear-gradient(135deg, #FBEFF2 0%, #F7E2E7 100%); border: 1px solid var(--border);">
               <div class="display-4 mb-2">📍</div>
-              <h5 class="fw-bold mb-2" style="color: var(--plum);">
+              <h5 class="fw-bold mb-2 h6" style="color: var(--plum);">
                 <%= salonName %>
               </h5>
               <p class="text-muted small mb-3">
@@ -282,7 +355,7 @@
                  rel="noopener noreferrer" 
                  class="btn-outline-nail w-100 py-2 d-inline-flex align-items-center justify-content-center gap-2">
                 <span>📍</span>
-                <span><%= lang === 'km' ? 'មើលផ្លូវទៅហាង' : 'Get Directions' %></span>
+                <span><%= lang === 'km' ? 'បើកមើលផែនទី' : 'Open Maps' %></span>
                 <span class="small">↗</span>
               </a>
             </div>
@@ -293,22 +366,22 @@
   </section>
 
   <!-- Telegram Bot Integration Banner -->
-  <section class="py-5">
+  <section class="py-4 py-md-5">
     <div class="container">
-      <div class="glass-card p-4 p-md-5 d-flex flex-column flex-md-row align-items-center justify-content-between gap-4"
-        style="background: linear-gradient(135deg, #ffffff 0%, #fef5f7 100%);">
+      <div class="glass-card p-3 p-sm-4 p-md-5 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 gap-md-4"
+        style="background: linear-gradient(135deg, #FFFFFF 0%, #FEF5F7 100%);">
         <div>
           <span class="badge bg-primary px-3 py-2 rounded-pill mb-2">Telegram Booking Bot</span>
-          <h3 class="fw-bold mb-2">
+          <h3 class="fw-bold mb-2 h4">
             <%= lang==='km' ? 'កក់តាម Telegram យ៉ាងរហ័សទាន់ចិត្ត' : 'Book in Seconds with Telegram' %>
           </h3>
-          <p class="text-secondary mb-0">
+          <p class="text-secondary mb-0 small">
             <%= lang==='km' ? 'ទទួលបានការជូនដំណឹងពីការបញ្ជាក់ការកក់ផ្ទាល់តាមទូរស័ព្ទរបស់អ្នក។'
               : 'Enjoy automated step-by-step booking and instant confirmation alerts directly in Telegram.' %>
           </p>
         </div>
-        <a href="https://t.me/miniroomnail_bot" target="_blank" class="btn-plum text-nowrap">
-          ✈️ <%= lang==='km' ? 'ទំនាក់ទំនង Telegram (@miniroomnail_bot)' : 'Open @miniroomnail_bot' %>
+        <a href="https://t.me/miniroomnail_bot" target="_blank" rel="noopener noreferrer" class="btn-plum text-nowrap w-100 w-md-auto text-center justify-content-center">
+          ✈️ <%= lang==='km' ? 'Telegram (@miniroomnail_bot)' : 'Open @miniroomnail_bot' %>
         </a>
       </div>
     </div>
@@ -319,8 +392,7 @@
     <div class="container text-center">
       <p class="mb-1"><strong>
           <%= salonName %>
-        </strong> — <%= lang==='km' ? 'ស្ទូឌីយោថែរក្សាក្រចកដៃកម្រិតខ្ពស់' : 'Premier Fingernail Studio & Manicure Art'
-          %>
+        </strong> — <%= lang==='km' ? 'ស្ទូឌីយោថែរក្សាក្រចកដៃកម្រិតខ្ពស់' : 'Premier Fingernail Studio & Manicure Art' %>
       </p>
       <p class="small text-secondary mb-0">© <%= new Date().getFullYear() %>
           <%= salonName %>. <%= lang==='km' ? 'រក្សាសិទ្ធិគ្រប់យ៉ាង' : 'All rights reserved.' %>
@@ -328,6 +400,148 @@
       </p>
     </div>
   </footer>
+
+  <!-- Customer Profile & Salon Info Modal -->
+  <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+        <div class="modal-header border-bottom pb-3" style="background: var(--bg-sand); border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg);">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fs-4">👤</span>
+            <div>
+              <h5 class="modal-title fw-bold h6 mb-0" id="profileModalLabel"><%= lang === 'km' ? 'ព័ត៌មានអតិថិជន & ហាង' : 'Customer Profile & Salon' %></h5>
+              <small class="text-muted"><%= salonName %></small>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-3 p-sm-4">
+          <!-- Customer Saved Details -->
+          <div class="glass-card-subtle mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="fw-bold small text-dark">📋 <%= lang === 'km' ? 'ព័ត៌មានដែលបានរក្សាទុក' : 'Saved Customer Info' %></span>
+              <span class="badge bg-light text-secondary border small"><%= lang === 'km' ? 'ស្វ័យប្រវត្តិ' : 'Auto-Saved' %></span>
+            </div>
+            <div id="profileSavedDetails">
+              <p class="small text-muted mb-0" id="profileNoSavedInfo">
+                <%= lang === 'km' ? 'ព័ត៌មានឈ្មោះ និងលេខទូរស័ព្ទរបស់អ្នកនឹងត្រូវបានរក្សាទុកដោយស្វ័យប្រវត្តិនៅពេលកក់លើកដំបូង។' : 'Your name and phone number will be remembered here after your first booking.' %>
+              </p>
+              <div id="profileSavedContent" class="d-none">
+                <div class="small"><strong><%= lang === 'km' ? 'ឈ្មោះ៖' : 'Name:' %></strong> <span id="profNameDisplay">-</span></div>
+                <div class="small"><strong><%= lang === 'km' ? 'លេខទូរស័ព្ទ៖' : 'Phone:' %></strong> <span id="profPhoneDisplay">-</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Links -->
+          <div class="d-flex flex-column gap-2 mb-3">
+            <a href="/status?lang=<%= lang %>" class="btn btn-outline-dark d-flex align-items-center justify-content-between py-2 px-3 rounded-3" style="min-height: 46px;">
+              <span class="d-flex align-items-center gap-2">
+                <span>🔍</span>
+                <span class="fw-bold small"><%= lang === 'km' ? 'មើលប្រវត្តិនិងស្ថានភាពការកក់' : 'View My Appointments' %></span>
+              </span>
+              <span>→</span>
+            </a>
+            <a href="https://maps.app.goo.gl/4qxBK6hFcZJoorRK7?g_st=it" target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger d-flex align-items-center justify-content-between py-2 px-3 rounded-3" style="min-height: 46px;">
+              <span class="d-flex align-items-center gap-2">
+                <span>🗺️</span>
+                <span class="fw-bold small"><%= lang === 'km' ? 'មើលផ្លូវទៅហាង (Google Maps)' : 'Get Directions (Google Maps)' %></span>
+              </span>
+              <span>↗</span>
+            </a>
+            <a href="https://t.me/miniroomnail_bot" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary d-flex align-items-center justify-content-between py-2 px-3 rounded-3" style="min-height: 46px;">
+              <span class="d-flex align-items-center gap-2">
+                <span>✈️</span>
+                <span class="fw-bold small"><%= lang === 'km' ? 'ជំនួយការកក់ Telegram Bot' : 'Telegram Booking Bot' %></span>
+              </span>
+              <span>↗</span>
+            </a>
+          </div>
+
+          <!-- Salon Info -->
+          <div class="pt-2 border-top small text-secondary">
+            <div>⏰ <strong><%= lang === 'km' ? 'ម៉ោងបើកហាង៖' : 'Hours:' %></strong> <%= settings.openingTime %> - <%= settings.closingTime %> (<%= lang === 'km' ? 'រៀងរាល់ថ្ងៃ' : 'Mon - Sun' %>)</div>
+            <% if (settings.salonPhone) { %>
+              <div class="mt-1">📞 <strong><%= lang === 'km' ? 'លេខទូរស័ព្ទ៖' : 'Phone:' %></strong> <a href="tel:<%= settings.salonPhone %>" class="text-decoration-none text-dark"><%= settings.salonPhone %></a></div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile App Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+    <a href="/?lang=<%= lang %>" class="bottom-nav-item active">
+      <span class="bottom-nav-icon">🏠</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'ទំព័រដើម' : 'Home' %></span>
+    </a>
+    <a href="/services?lang=<%= lang %>" class="bottom-nav-item">
+      <span class="bottom-nav-icon">💅</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'សេវាកម្ម' : 'Services' %></span>
+    </a>
+    <a href="/book?lang=<%= lang %>" class="bottom-nav-item book-highlight">
+      <span class="bottom-nav-icon-wrap">📅</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'កក់ណាត់' : 'Book' %></span>
+    </a>
+    <a href="/status?lang=<%= lang %>" class="bottom-nav-item">
+      <span class="bottom-nav-icon">🔍</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'ការកក់' : 'Bookings' %></span>
+    </a>
+    <a href="#" class="bottom-nav-item" data-bs-toggle="modal" data-bs-target="#profileModal">
+      <span class="bottom-nav-icon">👤</span>
+      <span class="bottom-nav-label"><%= lang === 'km' ? 'គណនី' : 'Profile' %></span>
+    </a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    (function() {
+      // Mobile Drawer Toggle
+      const toggleBtn = document.getElementById('salonMenuToggle');
+      const drawer = document.getElementById('salonMobileDrawer');
+      if (toggleBtn && drawer) {
+        toggleBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const isOpen = drawer.classList.toggle('show');
+          toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          toggleBtn.innerHTML = isOpen ? '✕' : '☰';
+        });
+        document.addEventListener('click', function(e) {
+          if (!drawer.contains(e.target) && !toggleBtn.contains(e.target) && drawer.classList.contains('show')) {
+            drawer.classList.remove('show');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            toggleBtn.innerHTML = '☰';
+          }
+        });
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && drawer.classList.contains('show')) {
+            drawer.classList.remove('show');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            toggleBtn.innerHTML = '☰';
+          }
+        });
+      }
+
+      // Check localStorage for saved customer profile info
+      try {
+        const savedName = localStorage.getItem('miniroom_customer_name');
+        const savedPhone = localStorage.getItem('miniroom_customer_phone');
+        if (savedName || savedPhone) {
+          const noSaved = document.getElementById('profileNoSavedInfo');
+          const savedWrap = document.getElementById('profileSavedContent');
+          const nameDisp = document.getElementById('profNameDisplay');
+          const phoneDisp = document.getElementById('profPhoneDisplay');
+          if (noSaved && savedWrap && nameDisp && phoneDisp) {
+            noSaved.classList.add('d-none');
+            savedWrap.classList.remove('d-none');
+            nameDisp.innerText = savedName || '-';
+            phoneDisp.innerText = savedPhone || '-';
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
 </body>
 
 </html>
